@@ -5,8 +5,48 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OLC1_Interpreter_P2"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Title="OLC1_Interpreter" Height="450" Width="800">
+    <DockPanel>
+        <Menu HorizontalAlignment="Left" VerticalAlignment="Top" Width="auto" DockPanel.Dock="Top">
+            <MenuItem Header="Archivo">
+                <MenuItem Header="Nuevo" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Abrir" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Guardar" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Guardar Como" HorizontalAlignment="Left" Width="auto"/>
+                <Separator HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Cerrar Pestaña" HorizontalAlignment="Left" Width="auto"/>
+            </MenuItem>
+            <MenuItem Header="Herramientas">
+                <MenuItem Header="Compilar" HorizontalAlignment="Left" Width="auto"/>
+                <Separator HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Iniciar Conexión" HorizontalAlignment="Left" Width="auto"/>
+            </MenuItem>
+            <MenuItem Header="Reportes">
+                <MenuItem Header="Errores" HorizontalAlignment="Left" Width="auto"/>
+                <Separator HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="AST" HorizontalAlignment="Left" Width="auto"/>
+            </MenuItem>
+        </Menu>
+        <TabControl DockPanel.Dock="Bottom">
+            <TabItem Header="Consola">
+                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="120px" Width="Auto" IsEnabled="True" />
+            </TabItem>
+            <TabItem Header="Simbolos">
+                <DataGrid Height="120px">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Nombre" Width="auto"/>
+                        <DataGridTextColumn Header="Valor" Width="auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
+        <TabControl>
+            <TabItem Header="sin titulo - 1">
+                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto"/>
+            </TabItem>
+            <TabItem Header="+">
+                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto"/>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
 </Window>
