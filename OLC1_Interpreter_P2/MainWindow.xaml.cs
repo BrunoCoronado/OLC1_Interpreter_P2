@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using OLC1_Interpreter_P2.sistema;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,11 +24,11 @@ namespace OLC1_Interpreter_P2
     {
         private int contadorTabs;
         private Boolean removiendoTab;
+        private Archivo archivo;
 
         public MainWindow()
         {
-            contadorTabs = 1;
-            removiendoTab = false;
+            inicializacionVariablesLocales();
             InitializeComponent();
         }
 
@@ -43,12 +45,10 @@ namespace OLC1_Interpreter_P2
                         //MessageBox.Show("Agreganddo TAB");
                         //******CREACION DEL NUEVO TAB******
                         TabItem tabItem = new TabItem();
-                        tabItem.Header = "Sin Titulo - " + ++contadorTabs;
-                        tabItem.Name = "T" + contadorTabs;
+                        tabItem.Header = "sin titulo - " + ++contadorTabs;
                         //******FIN CREACION DEL NUEVO TAB******
                         //******CREACION DEL TEXTBOX PARA EL NUEVO TAB******
                         TextBox textBox = new TextBox();
-                        textBox.Name = "txtT" + contadorTabs;
                         textBox.AcceptsTab = true;
                         textBox.TextWrapping = TextWrapping.Wrap;
                         textBox.AcceptsReturn = true;
@@ -93,6 +93,62 @@ namespace OLC1_Interpreter_P2
             {
                 Console.WriteLine("ERROR NO ESPERADO CERRANDO TAB ACTUAL");
             }
+        }
+
+        private void GuardarComo_Click(object sender, RoutedEventArgs e)
+        {
+
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "archivo fi|*.fi";
+            saveFileDialog.ShowDialog();
+            if(!saveFileDialog.FileName.Equals(""))
+            {
+                archivo.guardarComoArchivo(saveFileDialog.FileName, ((this.tabEditor.SelectedItem as TabItem).Content as TextBox).Text);
+                (this.tabEditor.SelectedItem as TabItem).Header = saveFileDialog.FileName;
+            }
+        }
+
+        private void Guardar_Click(object sender, RoutedEventArgs e)
+        {
+            if (!((this.tabEditor.SelectedItem as TabItem).Header.ToString()).Contains("sin titulo -"))
+            {
+                archivo.guardarArchivo((this.tabEditor.SelectedItem as TabItem).Header.ToString(), ((this.tabEditor.SelectedItem as TabItem).Content as TextBox).Text);
+            }
+            else
+            {
+                GuardarComo_Click(sender, e);
+            }
+        }
+
+        private void Abrir_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "archivo fi|*.fi";
+            openFileDialog.ShowDialog();
+            if (!openFileDialog.FileName.Equals(""))
+            {
+                ((this.tabEditor.SelectedItem as TabItem).Content as TextBox).Text = archivo.abrirArchivo(openFileDialog.FileName);
+                (this.tabEditor.SelectedItem as TabItem).Header = openFileDialog.FileName;
+            }
+        }
+
+        private void Nuevo_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "archivo fi|*.fi";
+            saveFileDialog.ShowDialog();
+            if (!saveFileDialog.FileName.Equals(""))
+            {
+                archivo.nuevoArchivo(saveFileDialog.FileName);
+                (this.tabEditor.SelectedItem as TabItem).Header = saveFileDialog.FileName;
+            }
+        }
+
+        private void inicializacionVariablesLocales()
+        {
+            archivo = new Archivo();
+            contadorTabs = 1;
+            removiendoTab = false;
         }
     }
 }

@@ -9,10 +9,10 @@
     <DockPanel>
         <Menu HorizontalAlignment="Left" VerticalAlignment="Top" Width="auto" DockPanel.Dock="Top">
             <MenuItem Header="Archivo">
-                <MenuItem Header="Nuevo" HorizontalAlignment="Left" Width="auto"/>
-                <MenuItem Header="Abrir" HorizontalAlignment="Left" Width="auto"/>
-                <MenuItem Header="Guardar" HorizontalAlignment="Left" Width="auto"/>
-                <MenuItem Header="Guardar Como" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Nuevo" HorizontalAlignment="Left" Width="auto" Click="Nuevo_Click"/>
+                <MenuItem Header="Abrir" HorizontalAlignment="Left" Width="auto" Click="Abrir_Click"/>
+                <MenuItem Header="Guardar" HorizontalAlignment="Left" Width="auto" Click="Guardar_Click"/>
+                <MenuItem Header="Guardar Como" HorizontalAlignment="Left" Width="auto" Click="GuardarComo_Click"/>
                 <Separator HorizontalAlignment="Left" Width="auto"/>
                 <MenuItem Header="Cerrar Pestaña" HorizontalAlignment="Left" Width="auto" Click="CerrarTab_Click"/>
             </MenuItem>
@@ -40,9 +40,9 @@
                 </DataGrid>
             </TabItem>
         </TabControl>
-        <TabControl SelectionChanged="TabControl_SelectionChanged" Name="tabEditor" ItemsSource="{Binding}">
-            <TabItem Header="sin titulo - 1" Name="t1">
-                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto" Name="txtT1"/>
+        <TabControl SelectionChanged="TabControl_SelectionChanged" Name="tabEditor">
+            <TabItem Header="sin titulo - 1">
+                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto"/>
             </TabItem>
             <TabItem Header="+">
             </TabItem>
