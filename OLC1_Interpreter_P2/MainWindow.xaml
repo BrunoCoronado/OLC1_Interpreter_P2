@@ -14,7 +14,7 @@
                 <MenuItem Header="Guardar" HorizontalAlignment="Left" Width="auto"/>
                 <MenuItem Header="Guardar Como" HorizontalAlignment="Left" Width="auto"/>
                 <Separator HorizontalAlignment="Left" Width="auto"/>
-                <MenuItem Header="Cerrar Pestaña" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Cerrar Pestaña" HorizontalAlignment="Left" Width="auto" Click="CerrarTab_Click"/>
             </MenuItem>
             <MenuItem Header="Herramientas">
                 <MenuItem Header="Compilar" HorizontalAlignment="Left" Width="auto"/>
@@ -40,12 +40,11 @@
                 </DataGrid>
             </TabItem>
         </TabControl>
-        <TabControl>
-            <TabItem Header="sin titulo - 1">
-                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto"/>
+        <TabControl SelectionChanged="TabControl_SelectionChanged" Name="tabEditor" ItemsSource="{Binding}">
+            <TabItem Header="sin titulo - 1" Name="t1">
+                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto" Name="txtT1"/>
             </TabItem>
             <TabItem Header="+">
-                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="Auto" Width="Auto"/>
             </TabItem>
         </TabControl>
     </DockPanel>
