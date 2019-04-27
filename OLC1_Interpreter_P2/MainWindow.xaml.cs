@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
-using OLC1_Interpreter_P2.sistema;
+using OLC1_Interpreter_P2.sistema.administracion;
+using OLC1_Interpreter_P2.sistema.analisis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -142,6 +143,15 @@ namespace OLC1_Interpreter_P2
                 archivo.nuevoArchivo(saveFileDialog.FileName);
                 (this.tabEditor.SelectedItem as TabItem).Header = saveFileDialog.FileName;
             }
+        }
+
+        private void Compilar_Click(object sender, RoutedEventArgs e)
+        {
+            Interprete interprete = new Interprete();
+            if (interprete.analizar(((this.tabEditor.SelectedItem as TabItem).Content as TextBox).Text + "$"))
+                MessageBox.Show("cadena valida");
+            else
+                MessageBox.Show("cadena invalida");
         }
 
         private void inicializacionVariablesLocales()

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OLC1_Interpreter_P2.sistema
+namespace OLC1_Interpreter_P2.sistema.administracion
 {
     class Archivo
     {

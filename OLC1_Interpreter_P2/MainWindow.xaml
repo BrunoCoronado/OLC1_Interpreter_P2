@@ -17,7 +17,7 @@
                 <MenuItem Header="Cerrar Pestaña" HorizontalAlignment="Left" Width="auto" Click="CerrarTab_Click"/>
             </MenuItem>
             <MenuItem Header="Herramientas">
-                <MenuItem Header="Compilar" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Compilar" HorizontalAlignment="Left" Width="auto" Click="Compilar_Click"/>
                 <Separator HorizontalAlignment="Left" Width="auto"/>
                 <MenuItem Header="Iniciar Conexión" HorizontalAlignment="Left" Width="auto"/>
             </MenuItem>
