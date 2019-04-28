@@ -37,12 +37,13 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 foreach (Clase clase in clases)
                 {
                     Console.WriteLine(clase.identificador);
-                    if (clase.imports.Count > 0)
+                    foreach (String import in clase.imports)
                     {
-                        foreach (String import in clase.imports)
-                        {
-                            Console.WriteLine("\t"+import);
-                        }
+                        Console.WriteLine("\t"+import);
+                    }
+                    foreach (Variable variable in clase.variables)
+                    {
+                        Console.WriteLine("\t\t" + variable.identificador + " | " + variable.tipo + " | " + variable.visibilidad);
                     }
                 }
                 return true;
@@ -68,16 +69,122 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         {
             //lecutar identificador de la clase
             Clase clase = new Clase(declaracionClase.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
-            clases.Add(clase);
             //lectura de import o sentencias internas de la clase segun sea el caso
-            if (declaracionClase.ChildNodes.Count > 1)
+            if (declaracionClase.ChildNodes.Count == 2)
             {
                 if (declaracionClase.ChildNodes.ElementAt(1).ToString().Equals("IMPORTAR"))
                 {
+                    definirImports(declaracionClase.ChildNodes.ElementAt(1), clase);
+                }
+                else if(declaracionClase.ChildNodes.ElementAt(1).ToString().Equals("CUERPO_CLASE"))
+                {
                     foreach (ParseTreeNode nodo in declaracionClase.ChildNodes.ElementAt(1).ChildNodes)
-                        clase.agregarImport(nodo.ToString().Replace("(identificador)", "").Trim());
+                    {
+                        switch (nodo.ToString())
+                        {
+                            case "DECLARACION_VARIABLE":
+                                clase = declaracionVariable(nodo, clase);
+                                break;
+                            default: Console.WriteLine("CASO NO MANEJADO");
+                                break;
+                        }
+                    }
+                }
+            }else if (declaracionClase.ChildNodes.Count == 3)
+            {
+                definirImports(declaracionClase.ChildNodes.ElementAt(1), clase);
+
+                foreach (ParseTreeNode nodo in declaracionClase.ChildNodes.ElementAt(2).ChildNodes)
+                {
+                    switch (nodo.ToString())
+                    {
+                        case "DECLARACION_VARIABLE":
+                            clase = declaracionVariable(nodo, clase);
+                            break;
+                        default:
+                            Console.WriteLine("CASO NO MANEJADO");
+                            break;
+                    }
                 }
             }
+            bool errorExistencia = false;//validacion de existencia de la clase para agregarla a la lista
+            foreach (Clase c in clases)
+            {
+                if (c.identificador.Equals(clase.identificador))
+                {
+                    //error semantico - clase repetida
+                    errorExistencia = true;
+                    break;
+                }
+            }
+            if(!errorExistencia)
+                clases.Add(clase);
+        }
+
+        private Clase definirImports(ParseTreeNode imports, Clase clase)
+        {
+            foreach (ParseTreeNode nodo in imports.ChildNodes)
+            {
+                String identificador = nodo.ToString().Replace("(identificador)", "").Trim();
+                bool erroExistencia = false;
+                foreach (String c in clase.imports)
+                {
+                    if (c.Equals(identificador))
+                    {
+                        //error semantico - import repetido
+                        erroExistencia = true;
+                        break;
+                    }
+                }
+                if (!erroExistencia)
+                {
+                    clase.agregarImport(identificador);
+                }
+            }
+            return clase;
+        }
+
+        private Clase declaracionVariable(ParseTreeNode declaracionVariable, Clase clase)
+        {
+            if (declaracionVariable.ChildNodes.Count == 2)
+            {
+                foreach (ParseTreeNode nodo in declaracionVariable.ChildNodes.ElementAt(1).ChildNodes)
+                {
+                    String identificador = nodo.ToString().Replace("(identificador)", "").Trim();
+                    bool errorExistencia = false;
+                    foreach (Variable variable in clase.variables)
+                    {
+                        if (variable.identificador.Equals(identificador))
+                        {
+                            //error semantico - variable repetida
+                            errorExistencia = true;
+                            break;
+                        }
+                    }
+                    if (!errorExistencia)
+                        clase.agregarVariable(new Variable(declaracionVariable.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), identificador));
+                }
+            }
+            else
+            {
+                foreach (ParseTreeNode nodo in declaracionVariable.ChildNodes.ElementAt(2).ChildNodes)
+                {
+                    String identificador = nodo.ToString().Replace("(identificador)", "").Trim();
+                    bool errorExistencia = false;
+                    foreach (Variable variable in clase.variables)
+                    {
+                        if (variable.identificador.Equals(identificador))
+                        {
+                            //error semantico - variable repetida
+                            errorExistencia = true;
+                            break;
+                        }
+                    }
+                    if (!errorExistencia)
+                        clase.agregarVariable(new Variable(declaracionVariable.ChildNodes.ElementAt(1).ToString().Replace("(Keyword)", "").Trim(), identificador, declaracionVariable.ChildNodes.ElementAt(0).ToString().Replace("(visibilidad)", "").Trim()));
+                }
+            }
+            return clase;
         }
     }
 }

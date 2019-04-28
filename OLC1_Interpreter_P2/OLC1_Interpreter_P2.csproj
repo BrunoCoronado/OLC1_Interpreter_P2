@@ -62,6 +62,7 @@
     <Compile Include="sistema\analisis\Gramatica.cs" />
     <Compile Include="sistema\analisis\Interprete.cs" />
     <Compile Include="sistema\bean\Clase.cs" />
+    <Compile Include="sistema\bean\Variable.cs" />
     <Compile Include="sistema\graficador\Grafica.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

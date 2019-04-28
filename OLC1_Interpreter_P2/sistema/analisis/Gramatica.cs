@@ -83,8 +83,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             var _override = ToTerm("override");
 
             //VISIBILIDAD 
-            var publico = ToTerm("publico");
-            var privado = ToTerm("privado");
+            RegexBasedTerminal visibilidad = new RegexBasedTerminal("visibilidad", "publico|privado");
 
             //FUNCIONES
             var _void = ToTerm("void");
@@ -128,11 +127,18 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal SENTENCIA = new NonTerminal("SENTENCIA");
             NonTerminal DECLARACION_CLASE = new NonTerminal("DECLARACION_CLASE");
             NonTerminal IMPORTAR = new NonTerminal("IMPORTAR");
+            NonTerminal CUERPO_CLASE = new NonTerminal("CUERPO_CLASE");
+            NonTerminal SENTENCIA_CLASE = new NonTerminal("SENTENCIA_CLASE");
+            NonTerminal DECLARACION_VARIABLE = new NonTerminal("DECLARACION_VARIABLE");
+            NonTerminal ASIGNACION_VARIABLE = new NonTerminal("ASIGNACION_VARIABLE");
+            NonTerminal DECLARACION_ASIGNACION_VARIABLE = new NonTerminal("DECLARACION_ASIGNACION_VARIABLE");
+            NonTerminal TIPO_DATO = new NonTerminal("TIPO_DATO");
+            NonTerminal L_IDENTIFICADOR = new NonTerminal("L_IDENTIFICADOR");
 
             //PREFERENCIAS
             this.Root = A;
-            this.MarkPunctuation("$","{", "}", "clase", "importar");
-            this.MarkTransient(A, SENTENCIA);
+            this.MarkPunctuation("$","{", "}", ";" , "clase", "importar");
+            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO);
 
             //GRAMATICA
             A.Rule = PROGRAMA + aceptacion
@@ -145,10 +151,28 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             ;
 
             DECLARACION_CLASE.Rule = clase + identificador + importar + IMPORTAR + llaveAbre + llaveCierra
+                    | clase + identificador + importar + IMPORTAR + llaveAbre + CUERPO_CLASE + llaveCierra
                     | clase + identificador + llaveAbre + llaveCierra
+                    | clase + identificador + llaveAbre + CUERPO_CLASE + llaveCierra
+
             ;
 
             IMPORTAR.Rule = MakePlusRule(IMPORTAR, coma, identificador);
+
+            CUERPO_CLASE.Rule = MakePlusRule(CUERPO_CLASE, SENTENCIA_CLASE);
+
+            SENTENCIA_CLASE.Rule = DECLARACION_VARIABLE
+                    //|ASIGNACION_VARIABLE
+                    //|DECLARACION_ASIGNACION_VARIABLE
+            ;
+
+            DECLARACION_VARIABLE.Rule = TIPO_DATO + L_IDENTIFICADOR + puntoYComa
+                    | visibilidad + TIPO_DATO + L_IDENTIFICADOR + puntoYComa
+            ;
+
+            TIPO_DATO.Rule = _int | _double | _bool | _char | _string;
+
+            L_IDENTIFICADOR.Rule = MakePlusRule(L_IDENTIFICADOR,  coma, identificador);
         }
     }
 }
