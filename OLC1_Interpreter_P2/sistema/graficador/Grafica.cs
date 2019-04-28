@@ -10,7 +10,7 @@ namespace OLC1_Interpreter_P2.sistema.graficador
 {
     class Grafica
     {
-        private int contadorNodos = 1;
+        private int contadorNodos = 0;
         private String conexiones = "";
         private StreamWriter streamWriter;
 
@@ -22,7 +22,7 @@ namespace OLC1_Interpreter_P2.sistema.graficador
                 {
                     streamWriter.WriteLine("digraph G{");
                     String idNodo = "nodo" + (++contadorNodos).ToString();
-                    streamWriter.WriteLine(idNodo + "[label = \" NO: " + contadorNodos.ToString() + " \\n VALOR: " + raiz.ToString() + " \"]");
+                    streamWriter.WriteLine(idNodo + "[label = \" " + contadorNodos.ToString() + " \\n " + raiz.ToString() + " \"]");
 
                     if (raiz.ChildNodes.Count != 0)
                     {
@@ -44,7 +44,7 @@ namespace OLC1_Interpreter_P2.sistema.graficador
         private void graficarHijos(String padre, ParseTreeNode hijo)
         {
             string idNodo = "nodo" + (++contadorNodos).ToString();
-            streamWriter.WriteLine(idNodo + "[label = \" NO: " + contadorNodos.ToString() + " \\n VALOR: " + hijo.ToString() + " \"]");
+            streamWriter.WriteLine(idNodo + "[label = \" " + contadorNodos.ToString() + " \\n " + hijo.ToString() + " \"]");
             conexiones += padre + "->" + idNodo + "\n";
             if (hijo.ChildNodes.Count != 0)
             {

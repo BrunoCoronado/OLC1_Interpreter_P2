@@ -124,32 +124,31 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             //NO TERMINALES
             NonTerminal A = new NonTerminal("A");
-            NonTerminal B = new NonTerminal("B");
-            NonTerminal C = new NonTerminal("C");
-            NonTerminal C0 = new NonTerminal("C0");
-            NonTerminal C1 = new NonTerminal("C1");
+            NonTerminal PROGRAMA = new NonTerminal("PROGRAMA");
+            NonTerminal SENTENCIA = new NonTerminal("SENTENCIA");
+            NonTerminal DECLARACION_CLASE = new NonTerminal("DECLARACION_CLASE");
+            NonTerminal IMPORTAR = new NonTerminal("IMPORTAR");
 
+            //PREFERENCIAS
             this.Root = A;
+            this.MarkPunctuation("$","{", "}", "clase", "importar");
+            this.MarkTransient(A, SENTENCIA);
 
             //GRAMATICA
-            A.Rule = B + aceptacion
+            A.Rule = PROGRAMA + aceptacion
                     | aceptacion
             ;
 
-            B.Rule = C + B
-                    | C
+            PROGRAMA.Rule = MakePlusRule(PROGRAMA, SENTENCIA);
+
+            SENTENCIA.Rule = DECLARACION_CLASE
             ;
 
-            C.Rule = clase + identificador + C0 + llaveAbre + llaveCierra
+            DECLARACION_CLASE.Rule = clase + identificador + importar + IMPORTAR + llaveAbre + llaveCierra
                     | clase + identificador + llaveAbre + llaveCierra
             ;
 
-            C0.Rule = importar + C1
-            ;
-
-            C1.Rule = identificador + coma + C1
-                    | identificador
-            ;
+            IMPORTAR.Rule = MakePlusRule(IMPORTAR, coma, identificador);
         }
     }
 }
