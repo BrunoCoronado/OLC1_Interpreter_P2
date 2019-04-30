@@ -17,19 +17,20 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             //TIPOS DE DATOS
             var _int = ToTerm("int");
-            RegexBasedTerminal numeroEntero = new RegexBasedTerminal("entero", "[0-9]+");
+            RegexBasedTerminal numeroEntero = new RegexBasedTerminal("int", "[0-9]+");
 
             var _double = ToTerm("double");
-            RegexBasedTerminal numeroDecimal = new RegexBasedTerminal("decimal", "[0-9]+\\.[0-9]+");
+            RegexBasedTerminal numeroDecimal = new RegexBasedTerminal("double", "[0-9]+\\.[0-9]+");
 
             var _bool = ToTerm("bool");
-            RegexBasedTerminal valorBooleano = new RegexBasedTerminal("booleano", "verdadero|falso|true|false");
+            RegexBasedTerminal valorBooleano = new RegexBasedTerminal("bool", "verdadero|falso|true|false");
 
             var _char = ToTerm("char");
-            RegexBasedTerminal caracter = new RegexBasedTerminal("caracter", "'(.?)'");
+            //RegexBasedTerminal caracter = new RegexBasedTerminal("caracter", "'(.?)'");
+            StringLiteral caracter = new StringLiteral("char", "'", StringOptions.IsChar);
 
             var _string = ToTerm("string");
-            StringLiteral textoEntreComillas = new StringLiteral("textoEntreComillas", "\"");
+            StringLiteral cadena = new StringLiteral("string", "\"");
 
             //ACEPTACION
             var aceptacion = ToTerm("$");
@@ -123,6 +124,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             //NO TERMINALES
             NonTerminal A = new NonTerminal("A");
+            NonTerminal E = new NonTerminal("E");
             NonTerminal PROGRAMA = new NonTerminal("PROGRAMA");
             NonTerminal SENTENCIA = new NonTerminal("SENTENCIA");
             NonTerminal DECLARACION_CLASE = new NonTerminal("DECLARACION_CLASE");
@@ -137,7 +139,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             //PREFERENCIAS
             this.Root = A;
-            this.MarkPunctuation("$","{", "}", ";" , "clase", "importar");
+            this.MarkPunctuation("$","{", "}", ";" , "=" , "clase", "importar");
             this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO);
 
             //GRAMATICA
@@ -162,7 +164,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             CUERPO_CLASE.Rule = MakePlusRule(CUERPO_CLASE, SENTENCIA_CLASE);
 
             SENTENCIA_CLASE.Rule = DECLARACION_VARIABLE
-                    //|ASIGNACION_VARIABLE
+                    |ASIGNACION_VARIABLE
                     //|DECLARACION_ASIGNACION_VARIABLE
             ;
 
@@ -173,6 +175,16 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             TIPO_DATO.Rule = _int | _double | _bool | _char | _string;
 
             L_IDENTIFICADOR.Rule = MakePlusRule(L_IDENTIFICADOR,  coma, identificador);
+
+            ASIGNACION_VARIABLE.Rule = identificador + igual + E + puntoYComa;
+
+            E.Rule = numeroEntero
+                    | numeroDecimal
+                    | valorBooleano
+                    | caracter
+                    | cadena
+                    | identificador
+            ;
         }
     }
 }

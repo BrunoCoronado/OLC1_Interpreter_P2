@@ -14,6 +14,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
     {
         private ParseTreeNode raiz;
         private ArrayList clases;
+        private Clase claseActual;
 
         public Interprete()
         {
@@ -43,7 +44,15 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     }
                     foreach (Variable variable in clase.variables)
                     {
-                        Console.WriteLine("\t\t" + variable.identificador + " | " + variable.tipo + " | " + variable.visibilidad);
+                        if (variable.valor != null)
+                        {
+                            Console.WriteLine("\t\t" + variable.identificador + " | " + variable.tipo + " | " + variable.visibilidad + " | " + variable.valor.ToString());
+                        }
+                        else
+                        {
+                            Console.WriteLine("\t\t" + variable.identificador + " | " + variable.tipo + " | " + variable.visibilidad);
+                        }
+                        
                     }
                 }
                 return true;
@@ -85,6 +94,9 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                             case "DECLARACION_VARIABLE":
                                 clase = declaracionVariable(nodo, clase);
                                 break;
+                            case "ASIGNACION_VARIABLE":
+                                clase = asignacionVariable(nodo, clase);
+                                break;
                             default: Console.WriteLine("CASO NO MANEJADO");
                                 break;
                         }
@@ -100,6 +112,9 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     {
                         case "DECLARACION_VARIABLE":
                             clase = declaracionVariable(nodo, clase);
+                            break;
+                        case "ASIGNACION_VARIABLE":
+                            clase = asignacionVariable(nodo, clase);
                             break;
                         default:
                             Console.WriteLine("CASO NO MANEJADO");
@@ -185,6 +200,35 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 }
             }
             return clase;
+        }
+
+        private Clase asignacionVariable(ParseTreeNode asignacionVariable, Clase clase)
+        {
+            foreach (Variable variable in clase.variables)
+            {
+                if (variable.identificador.Equals(asignacionVariable.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim()))
+                {
+                    variable.valor = capturarValor(asignacionVariable.ChildNodes.ElementAt(1), variable.tipo);
+                }
+            }
+            return clase;
+        }
+
+        private object capturarValor(ParseTreeNode nodo, string tipo)
+        {
+            if(nodo.ChildNodes.Count == 1)
+            {
+                string[] contenidoNodo = nodo.ChildNodes.ElementAt(0).ToString().Split(' ');
+                if (contenidoNodo[1].Replace("(", "").Replace(")", "").Equals(tipo))
+                {
+                    return contenidoNodo[0];
+                }
+            }
+            else
+            {
+                Console.WriteLine("CASO NO MANEJADO");
+            }
+            return null;
         }
     }
 }
