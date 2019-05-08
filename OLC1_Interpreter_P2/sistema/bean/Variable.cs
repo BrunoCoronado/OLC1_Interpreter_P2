@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Irony.Parsing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
     {
         private String _tipo;
         private String _identificador;
-        private Object _valor;
+        private ParseTreeNode _nodoValor;
         private int _visibilidad;
 
         public Variable(String tipo, String identificador)
@@ -18,7 +19,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad = 0;
-            _valor = null;
+            _nodoValor = null;
         }
 
         public Variable(String tipo, String identificador, String visibilidad)
@@ -26,28 +27,28 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad=(visibilidad.Equals("publico"))?0:1;
-            _valor = null;
+            _nodoValor = null;
         }
 
-        public Variable(String tipo, String identificador, Object valor)
+        public Variable(String tipo, String identificador, ParseTreeNode valor)
         {
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad = 0;
-            _valor = valor;
+            _nodoValor = valor;
         }
 
-        public Variable(String tipo, String identificador, Object valor, String visibilidad)
+        public Variable(String tipo, String identificador, ParseTreeNode valor, String visibilidad)
         {
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad = (visibilidad.Equals("publico")) ? 0 : 1;
-            _valor = valor;
+            _nodoValor = valor;
         }
 
         public String tipo { get => _tipo; set => _tipo = value; }
         public String identificador { get => _identificador; set => _identificador = value; }
-        public Object valor { get => _valor; set => _valor = value; }
+        public ParseTreeNode valor { get => _nodoValor; set => _nodoValor = value; }
         public int visibilidad { get => _visibilidad; set => _visibilidad = value; }
     }
 }

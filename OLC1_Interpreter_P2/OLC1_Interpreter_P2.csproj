@@ -61,9 +61,13 @@
     <Compile Include="sistema\administracion\Archivo.cs" />
     <Compile Include="sistema\analisis\Gramatica.cs" />
     <Compile Include="sistema\analisis\Interprete.cs" />
+    <Compile Include="sistema\bean\Arreglo.cs" />
     <Compile Include="sistema\bean\Clase.cs" />
+    <Compile Include="sistema\bean\Entorno.cs" />
     <Compile Include="sistema\bean\Variable.cs" />
+    <Compile Include="sistema\bean\Error.cs" />
     <Compile Include="sistema\graficador\Grafica.cs" />
+    <Compile Include="sistema\graficador\Reporte.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

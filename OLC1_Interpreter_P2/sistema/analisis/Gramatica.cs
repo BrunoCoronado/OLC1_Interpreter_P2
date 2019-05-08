@@ -12,8 +12,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         public Gramatica() : base (caseSensitive: false)
         {
             //COMENTARIOS
-            CommentTerminal comentarioLinea = new CommentTerminal("comentario", ">>", "\n");
-            CommentTerminal comentarioMultiLinea = new CommentTerminal("comentario", "<-", "->");
+            CommentTerminal comentarioLinea = new CommentTerminal("comentarioLinea", ">>", "\n", "\r\n", "\r", "\u2085", "\u2028", "\u2029");
+            CommentTerminal comentarioMultiLinea = new CommentTerminal("comentarioMultiLinea", "<-", "->");
 
             //TIPOS DE DATOS
             var _int = ToTerm("int");
@@ -136,11 +136,26 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal DECLARACION_ASIGNACION_VARIABLE = new NonTerminal("DECLARACION_ASIGNACION_VARIABLE");
             NonTerminal TIPO_DATO = new NonTerminal("TIPO_DATO");
             NonTerminal L_IDENTIFICADOR = new NonTerminal("L_IDENTIFICADOR");
+            NonTerminal DECLARACION_ARREGLO = new NonTerminal("DECLARACION_ARREGLO");
+            NonTerminal DECLARACION_ASIGNACION_ARREGLO = new NonTerminal("DECLARACION_ASIGNACION_ARREGLO");
+            NonTerminal ASIGNACION_ESPECIFICO_ARREGLO = new NonTerminal("ASIGNACION_ESPECIFICO_ARREGLO");
+            NonTerminal DIMENSIONES_ARREGLO = new NonTerminal("DIMENSIONES_ARREGLO");
+            NonTerminal CONTENIDO_ARREGLO = new NonTerminal("CONTENIDO_ARREGLO");
+            NonTerminal VALORES_ARREGLO = new NonTerminal("VALORES_ARREGLO");
 
             //PREFERENCIAS
             this.Root = A;
-            this.MarkPunctuation("$","{", "}", ";" , "=" , "clase", "importar");
-            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO);
+            this.NonGrammarTerminals.Add(comentarioLinea);
+            this.NonGrammarTerminals.Add(comentarioMultiLinea);
+            this.MarkPunctuation("$","{", "}", ";" , "=", "]", "[", "clase", "importar", "array");
+            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO);
+            this.RegisterOperators(1, Associativity.Left, or);
+            this.RegisterOperators(2, Associativity.Left, and);
+            this.RegisterOperators(3, Associativity.Left, not);
+            this.RegisterOperators(4, Associativity.Left, igualacion, diferenciacion, menorQue, menorIgual, mayorQue, mayorIgual);
+            this.RegisterOperators(5, Associativity.Left, suma, resta);
+            this.RegisterOperators(6, Associativity.Left, multiplicacion, division);
+            this.RegisterOperators(7, Associativity.Left, potencia);
 
             //GRAMATICA
             A.Rule = PROGRAMA + aceptacion
@@ -164,8 +179,10 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             CUERPO_CLASE.Rule = MakePlusRule(CUERPO_CLASE, SENTENCIA_CLASE);
 
             SENTENCIA_CLASE.Rule = DECLARACION_VARIABLE
-                    |ASIGNACION_VARIABLE
-                    //|DECLARACION_ASIGNACION_VARIABLE
+                    | ASIGNACION_VARIABLE
+                    | DECLARACION_ASIGNACION_VARIABLE
+                    | DECLARACION_ARREGLO
+                    | DECLARACION_ASIGNACION_ARREGLO
             ;
 
             DECLARACION_VARIABLE.Rule = TIPO_DATO + L_IDENTIFICADOR + puntoYComa
@@ -178,12 +195,58 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             ASIGNACION_VARIABLE.Rule = identificador + igual + E + puntoYComa;
 
-            E.Rule = numeroEntero
+            DECLARACION_ASIGNACION_VARIABLE.Rule = TIPO_DATO + L_IDENTIFICADOR + igual + E + puntoYComa
+                    | visibilidad + TIPO_DATO + L_IDENTIFICADOR + igual + E + puntoYComa
+
+            ;
+            
+            DECLARACION_ARREGLO.Rule = TIPO_DATO + array + L_IDENTIFICADOR + DIMENSIONES_ARREGLO + puntoYComa
+                    | visibilidad + TIPO_DATO + array + L_IDENTIFICADOR + DIMENSIONES_ARREGLO + puntoYComa
+            ;
+
+            DECLARACION_ASIGNACION_ARREGLO.Rule = TIPO_DATO + array + L_IDENTIFICADOR + DIMENSIONES_ARREGLO + igual + CONTENIDO_ARREGLO + puntoYComa
+                    | visibilidad + TIPO_DATO + array + L_IDENTIFICADOR + DIMENSIONES_ARREGLO + igual + CONTENIDO_ARREGLO + puntoYComa
+            ;
+
+            //ASIGNACION_ESPECIFICO_ARREGLO.Rule = Empty;
+
+            DIMENSIONES_ARREGLO.Rule = corcheteAbre + E + corcheteCierra
+                    | corcheteAbre + E + corcheteCierra + corcheteAbre + E + corcheteCierra
+                    | corcheteAbre + E + corcheteCierra + corcheteAbre + E + corcheteCierra + corcheteAbre + E + corcheteCierra
+            ;
+
+            CONTENIDO_ARREGLO.Rule = llaveAbre + VALORES_ARREGLO + llaveCierra
+                    |llaveAbre + CONTENIDO_ARREGLO + llaveCierra    
+            ;
+
+
+            VALORES_ARREGLO.Rule = MakePlusRule(VALORES_ARREGLO, coma, E)
+                    | MakePlusRule(VALORES_ARREGLO, coma, CONTENIDO_ARREGLO)    
+            ;
+
+            E.Rule = E + suma + E
+                    | E + resta + E
+                    | E + division + E
+                    | E + multiplicacion + E
+                    | E + potencia + E
+                    | resta + E
+                    | E + or + E
+                    | E + and + E
+                    | not + E
+                    | E + igualacion + E
+                    | E + diferenciacion + E
+                    | E + menorQue + E
+                    | E + menorIgual + E
+                    | E + mayorQue + E
+                    | E + mayorIgual + E
+                    | parentesisAbre + E + parentesisCierra
+                    | numeroEntero
                     | numeroDecimal
                     | valorBooleano
                     | caracter
                     | cadena
                     | identificador
+                    //| identificador + corcheteAbre + E + corcheteCierra
             ;
         }
     }
