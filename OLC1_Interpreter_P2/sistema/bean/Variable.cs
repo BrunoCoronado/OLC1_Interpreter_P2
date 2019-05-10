@@ -11,7 +11,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
     {
         private String _tipo;
         private String _identificador;
-        private ParseTreeNode _nodoValor;
+        private Object _valor;
         private int _visibilidad;
 
         public Variable(String tipo, String identificador)
@@ -19,7 +19,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad = 0;
-            _nodoValor = null;
+            _valor = null;
         }
 
         public Variable(String tipo, String identificador, String visibilidad)
@@ -27,28 +27,28 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad=(visibilidad.Equals("publico"))?0:1;
-            _nodoValor = null;
+            _valor = null;
         }
 
-        public Variable(String tipo, String identificador, ParseTreeNode valor)
+        public Variable(String tipo, String identificador, Object valor)
         {
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad = 0;
-            _nodoValor = valor;
+            _valor = valor;
         }
 
-        public Variable(String tipo, String identificador, ParseTreeNode valor, String visibilidad)
+        public Variable(String tipo, String identificador, Object valor, String visibilidad)
         {
             _tipo = tipo;
             _identificador = identificador;
             _visibilidad = (visibilidad.Equals("publico")) ? 0 : 1;
-            _nodoValor = valor;
+            _valor = valor;
         }
 
         public String tipo { get => _tipo; set => _tipo = value; }
         public String identificador { get => _identificador; set => _identificador = value; }
-        public ParseTreeNode valor { get => _nodoValor; set => _nodoValor = value; }
+        public Object valor { get => _valor; set => _valor = value; }
         public int visibilidad { get => _visibilidad; set => _visibilidad = value; }
     }
 }

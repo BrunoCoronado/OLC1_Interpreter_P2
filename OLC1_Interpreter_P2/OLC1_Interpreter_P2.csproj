@@ -63,7 +63,10 @@
     <Compile Include="sistema\analisis\Interprete.cs" />
     <Compile Include="sistema\bean\Arreglo.cs" />
     <Compile Include="sistema\bean\Clase.cs" />
+    <Compile Include="sistema\bean\Contexto.cs" />
     <Compile Include="sistema\bean\Entorno.cs" />
+    <Compile Include="sistema\bean\Funcion.cs" />
+    <Compile Include="sistema\bean\Parametro.cs" />
     <Compile Include="sistema\bean\Variable.cs" />
     <Compile Include="sistema\bean\Error.cs" />
     <Compile Include="sistema\graficador\Grafica.cs" />

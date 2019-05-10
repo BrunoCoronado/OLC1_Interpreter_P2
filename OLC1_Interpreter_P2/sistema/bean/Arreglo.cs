@@ -25,6 +25,15 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _visibilidad = 0;
         }
 
+        public Arreglo(String identificador, String tipo, ArrayList dimensiones)
+        {
+            _identificador = identificador;
+            _tipo = tipo;
+            _dimensiones = dimensiones;
+            _valores = new Hashtable();
+            _visibilidad = 0;
+        }
+
         public Arreglo(String identificador, String tipo, String visibilidad)
         {
             _identificador = identificador;
@@ -34,12 +43,16 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _valores = new Hashtable();
         }
 
-        public void agregarDimension(ParseTreeNode dimension)
+        public Arreglo(String identificador, String tipo, String visibilidad, ArrayList dimensiones)
         {
-            _dimensiones.Add(dimension);
+            _identificador = identificador;
+            _tipo = tipo;
+            _visibilidad = (visibilidad.Equals("publico")) ? 0 : 1;
+            _dimensiones = dimensiones;
+            _valores = new Hashtable();
         }
 
-        public void agregarValor(String key, ParseTreeNode valor)
+        public void agregarValor(String key, Object valor)
         {
             _valores.Add(key, valor);
         }

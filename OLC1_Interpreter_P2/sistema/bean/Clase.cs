@@ -14,6 +14,13 @@ namespace OLC1_Interpreter_P2.sistema.bean
         private ArrayList _imports;
         private Hashtable _tablaDeSimbolos;
 
+        public Clase(String identificador, Hashtable tablaDeSimbolos)
+        {
+            _identificador = identificador;
+            _tablaDeSimbolos = tablaDeSimbolos;
+            _imports = new ArrayList();
+        }
+
         public Clase(String identificador)
         {
             _identificador = identificador;
@@ -36,14 +43,26 @@ namespace OLC1_Interpreter_P2.sistema.bean
             return false;
         }
 
-        public Boolean actualizarVariable(String key, ParseTreeNode nodo)
+        public Boolean actualizarVariable(String key, Object valor)
         {
             if (_tablaDeSimbolos.ContainsKey(key))
             {
-                ((Variable)tablaDeSimbolos[key]).valor = nodo;
+                ((Variable)_tablaDeSimbolos[key]).valor = valor;
                 return true;
             }
             return false;
+        }
+
+        public Variable obtenerVariable(String key)
+        {
+            return ((Variable)tablaDeSimbolos[key]);
+        }
+
+
+
+        public Object obtenerSimbolo(String key)
+        {
+            return _tablaDeSimbolos[key];
         }
 
         public string identificador { get => _identificador; set => _identificador = value; }

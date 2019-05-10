@@ -152,6 +152,14 @@ namespace OLC1_Interpreter_P2
                 MessageBox.Show("cadena valida");
             else
                 MessageBox.Show("cadena invalida");
+            try
+            {
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR AL COMPILAR EL CODIGO"); 
+            }
         }
 
         private void inicializacionVariablesLocales()

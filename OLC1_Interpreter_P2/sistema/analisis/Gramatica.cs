@@ -91,6 +91,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             var _return = ToTerm("return");
 
             //FUNCIONES NATIVAS
+            var print = ToTerm("print");
+
             var show = ToTerm("show");
 
             var _if = ToTerm("if");
@@ -138,17 +140,28 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal L_IDENTIFICADOR = new NonTerminal("L_IDENTIFICADOR");
             NonTerminal DECLARACION_ARREGLO = new NonTerminal("DECLARACION_ARREGLO");
             NonTerminal DECLARACION_ASIGNACION_ARREGLO = new NonTerminal("DECLARACION_ASIGNACION_ARREGLO");
-            NonTerminal ASIGNACION_ESPECIFICO_ARREGLO = new NonTerminal("ASIGNACION_ESPECIFICO_ARREGLO");
             NonTerminal DIMENSIONES_ARREGLO = new NonTerminal("DIMENSIONES_ARREGLO");
             NonTerminal CONTENIDO_ARREGLO = new NonTerminal("CONTENIDO_ARREGLO");
             NonTerminal VALORES_ARREGLO = new NonTerminal("VALORES_ARREGLO");
+            NonTerminal DECLARACION_FUNCION_VACIA = new NonTerminal("DECLARACION_FUNCION_VACIA");
+            NonTerminal LISTA_PARAMETROS = new NonTerminal("LISTA_PARAMETROS");
+            NonTerminal LISTA_PARAMETROS_LLAMADA = new NonTerminal("LISTA_PARAMETROS_LLAMADA");
+            NonTerminal PARAMETRO_FUNCION = new NonTerminal("PARAMETRO_FUNCION");
+            NonTerminal SENTENCIAS_FUNCION_SIN_RETORNO = new NonTerminal("SENTENCIAS_FUNCION_SIN_RETORNO");
+            NonTerminal SENTENCIA_FUNCION_SIN_RETORNO = new NonTerminal("SENTENCIA_FUNCION_SIN_RETORNO");
+            NonTerminal METODO_MAIN = new NonTerminal("METODO_MAIN");
+            NonTerminal SENTENCIAS_MAIN = new NonTerminal("SENTENCIAS_MAIN");
+            NonTerminal SENTENCIA_MAIN = new NonTerminal("SENTENCIA_MAIN");
+            NonTerminal FUNCIONES_NATIVAS = new NonTerminal("FUNCIONES_NATIVAS");
+            NonTerminal FUNCION_NATIVA_PRINT = new NonTerminal("FUNCION_NATIVA_PRINT");
+            NonTerminal FUNCION_LOCAL = new NonTerminal("FUNCION_LOCAL"); 
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";" , "=", "]", "[", "clase", "importar", "array");
-            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO);
+            this.MarkPunctuation("$","{", "}", ";" , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print");
+            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
             this.RegisterOperators(3, Associativity.Left, not);
@@ -178,11 +191,13 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             CUERPO_CLASE.Rule = MakePlusRule(CUERPO_CLASE, SENTENCIA_CLASE);
 
-            SENTENCIA_CLASE.Rule = DECLARACION_VARIABLE
+            SENTENCIA_CLASE.Rule = METODO_MAIN
+                    | DECLARACION_VARIABLE
                     | ASIGNACION_VARIABLE
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
+                    | DECLARACION_FUNCION_VACIA
             ;
 
             DECLARACION_VARIABLE.Rule = TIPO_DATO + L_IDENTIFICADOR + puntoYComa
@@ -207,9 +222,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             DECLARACION_ASIGNACION_ARREGLO.Rule = TIPO_DATO + array + L_IDENTIFICADOR + DIMENSIONES_ARREGLO + igual + CONTENIDO_ARREGLO + puntoYComa
                     | visibilidad + TIPO_DATO + array + L_IDENTIFICADOR + DIMENSIONES_ARREGLO + igual + CONTENIDO_ARREGLO + puntoYComa
             ;
-
-            //ASIGNACION_ESPECIFICO_ARREGLO.Rule = Empty;
-
+            
             DIMENSIONES_ARREGLO.Rule = corcheteAbre + E + corcheteCierra
                     | corcheteAbre + E + corcheteCierra + corcheteAbre + E + corcheteCierra
                     | corcheteAbre + E + corcheteCierra + corcheteAbre + E + corcheteCierra + corcheteAbre + E + corcheteCierra
@@ -218,11 +231,52 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             CONTENIDO_ARREGLO.Rule = llaveAbre + VALORES_ARREGLO + llaveCierra
                     |llaveAbre + CONTENIDO_ARREGLO + llaveCierra    
             ;
-
-
+            
             VALORES_ARREGLO.Rule = MakePlusRule(VALORES_ARREGLO, coma, E)
                     | MakePlusRule(VALORES_ARREGLO, coma, CONTENIDO_ARREGLO)    
             ;
+
+            DECLARACION_FUNCION_VACIA.Rule = identificador + _void + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
+                    | identificador + _void + _override + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
+                    | visibilidad + identificador + _void + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
+                    | visibilidad + identificador + _void + _override + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
+            ;
+
+            LISTA_PARAMETROS.Rule = MakeStarRule(LISTA_PARAMETROS, coma, PARAMETRO_FUNCION);
+
+            LISTA_PARAMETROS_LLAMADA.Rule = MakeStarRule(LISTA_PARAMETROS_LLAMADA, coma, E);
+
+            PARAMETRO_FUNCION.Rule = TIPO_DATO + identificador;
+
+            SENTENCIAS_FUNCION_SIN_RETORNO.Rule = MakeStarRule(SENTENCIAS_FUNCION_SIN_RETORNO, SENTENCIA_FUNCION_SIN_RETORNO);
+
+            SENTENCIA_FUNCION_SIN_RETORNO.Rule = FUNCIONES_NATIVAS
+                    | FUNCION_LOCAL
+                    | DECLARACION_VARIABLE
+                    | ASIGNACION_VARIABLE
+                    | DECLARACION_ASIGNACION_VARIABLE
+                    | DECLARACION_ARREGLO
+                    | DECLARACION_ASIGNACION_ARREGLO
+            ;
+
+            METODO_MAIN.Rule = main + parentesisAbre + parentesisCierra + llaveAbre + SENTENCIAS_MAIN + llaveCierra;
+
+            SENTENCIAS_MAIN.Rule = MakeStarRule(SENTENCIAS_MAIN, SENTENCIA_MAIN);
+
+            SENTENCIA_MAIN.Rule = FUNCIONES_NATIVAS
+                    | FUNCION_LOCAL
+                    | DECLARACION_VARIABLE
+                    | ASIGNACION_VARIABLE
+                    | DECLARACION_ASIGNACION_VARIABLE
+                    | DECLARACION_ARREGLO
+                    | DECLARACION_ASIGNACION_ARREGLO
+            ;
+
+            FUNCIONES_NATIVAS.Rule = FUNCION_NATIVA_PRINT;
+
+            FUNCION_NATIVA_PRINT.Rule = print + parentesisAbre + E + parentesisCierra + puntoYComa;
+
+            FUNCION_LOCAL.Rule = identificador + parentesisAbre + LISTA_PARAMETROS_LLAMADA + parentesisCierra + puntoYComa;
 
             E.Rule = E + suma + E
                     | E + resta + E
