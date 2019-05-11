@@ -14,7 +14,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
         private int _visibilidad;
         private String _retorno;//va a ser el tipo de dato lo que nos interesa
         private ParseTreeNode _sentencias;
-        private Hashtable _parametros;
+        private ArrayList _parametros;
         private Hashtable _tablaDeSimbolos;
 
         public Funcion(String identificador, ParseTreeNode sentencias)
@@ -23,7 +23,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _sentencias = sentencias;
             _visibilidad = 0;
             _retorno = null;
-            _parametros = new Hashtable();
+            _parametros = new ArrayList();
             _tablaDeSimbolos = new Hashtable();
         }
 
@@ -33,27 +33,37 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _visibilidad = (visibilidad.Equals("publico")) ? 0 : 1;
             _sentencias = sentencias;
             _retorno = null;
-            _parametros = new Hashtable();
+            _parametros = new ArrayList();
             _tablaDeSimbolos = new Hashtable();
         }
 
         public Boolean agregarParametro(String key, Object value)
         {
-            if (!_parametros.ContainsKey(key) && !_tablaDeSimbolos.ContainsKey(key))
+            if (!_tablaDeSimbolos.ContainsKey(key))
             {
-                _parametros.Add(key, value);
+                _parametros.Add(value);
                 _tablaDeSimbolos.Add(key, value);
                 return true;
             }
             return false;
         }
 
+        public Boolean agregarValorParametro(String key, Object valor, int indice)
+        {
+            if (_tablaDeSimbolos.ContainsKey(key))
+            {
+                ((Variable)_tablaDeSimbolos[key]).valor = valor;
+                _parametros[indice] = _tablaDeSimbolos[key];
+                return true;
+            }
+            return false;
+        }
 
         public String identificador { get => _identificador; }
         public int visibilidad { get => _visibilidad; }
         public String retorno { get => _retorno; }
         public ParseTreeNode sentencias { get => _sentencias; }
-        public Hashtable parametros { get => _parametros; }
+        public ArrayList parametros { get => _parametros; }
         public Hashtable tablaDeSimbolos { get => _tablaDeSimbolos; }
 
     }

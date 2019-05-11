@@ -154,13 +154,14 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal SENTENCIA_MAIN = new NonTerminal("SENTENCIA_MAIN");
             NonTerminal FUNCIONES_NATIVAS = new NonTerminal("FUNCIONES_NATIVAS");
             NonTerminal FUNCION_NATIVA_PRINT = new NonTerminal("FUNCION_NATIVA_PRINT");
+            NonTerminal FUNCION_NATIVA_SHOW = new NonTerminal("FUNCION_NATIVA_SHOW");
             NonTerminal FUNCION_LOCAL = new NonTerminal("FUNCION_LOCAL"); 
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";" , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print");
+            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show");
             this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
@@ -272,9 +273,13 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_ARREGLO
             ;
 
-            FUNCIONES_NATIVAS.Rule = FUNCION_NATIVA_PRINT;
+            FUNCIONES_NATIVAS.Rule = FUNCION_NATIVA_PRINT
+                    | FUNCION_NATIVA_SHOW            
+            ;
 
             FUNCION_NATIVA_PRINT.Rule = print + parentesisAbre + E + parentesisCierra + puntoYComa;
+
+            FUNCION_NATIVA_SHOW.Rule = show + parentesisAbre + E + coma + E + parentesisCierra + puntoYComa;
 
             FUNCION_LOCAL.Rule = identificador + parentesisAbre + LISTA_PARAMETROS_LLAMADA + parentesisCierra + puntoYComa;
 

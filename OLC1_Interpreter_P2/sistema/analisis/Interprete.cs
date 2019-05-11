@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace OLC1_Interpreter_P2.sistema.analisis
 {
@@ -208,24 +209,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             if (obj != null)
             {
                 Variable variable = (Variable)obj;
-                switch (variable.tipo.ToLower())
-                {
-                    case "int":
-                        tipoDato = "System.Int32";
-                        break;
-                    case "bool":
-                        tipoDato = "System.Boolean";
-                        break;
-                    case "char":
-                        tipoDato = "System.Char";
-                        break;
-                    case "string":
-                        tipoDato = "System.String";
-                        break;
-                    case "double":
-                        tipoDato = "System.Double";
-                        break;
-                }
+                tipoDato = tipoDatoSistema(variable.tipo);
                 valor = calcularValor(asignacionVariable.ChildNodes.ElementAt(1));
                 if (valor != null)
                 {
@@ -620,16 +604,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                 default: return null;
                             }
                         case "(identificador)":
-                            Contexto c = contextoActual;
-                            Object obj = null;
-                            while (c != null)
-                            {
-                                obj = c.obtenerSimbolo(valor);
-                                if (obj == null)
-                                    c = c.anterior;
-                                else
-                                    break;
-                            }
+                            Object obj = buscarSimboloEnContexto(valor);
                             if (obj == null)
                             {
                                 errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
@@ -662,6 +637,20 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                 case "System.Int32": return Int32.Parse((Int32.Parse(valOP.ToString()) * -1).ToString());
                                 case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON BOOL", 0, 0));
                                     return null;
+                                default: return null;
+                            }
+                        case "!":
+                            switch (valOP.GetType().ToString())
+                            {
+                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA CHAR", 0, 0));
+                                    return null;
+                                case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA DOUBLE", 0, 0));
+                                    return null;
+                                case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA INT", 0, 0));
+                                    return null;
+                                case "System.Boolean": return (!Boolean.Parse(valOP.ToString()));
                                 default: return null;
                             }
                         default: Console.WriteLine("CASO NO MANEJADO");
@@ -1167,6 +1156,455 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                     }
                                 default: return null;
                             }
+                        case "==":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": return (valorA.ToString().Equals(valorB.ToString()));
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE STRING Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE STRING Y DOUBLE", 0, 0));
+                                            return null;
+                                        case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE STRING Y INT", 0, 0));
+                                            return null;
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE STRING Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Char":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE CHAR Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Char.Parse(valorA.ToString()).Equals(Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (((int)Char.Parse(valorA.ToString())) == Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (((int)Char.Parse(valorA.ToString())) == Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE CHAR Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Double":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE DOUBLE Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Double.Parse(valorA.ToString()) == ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Double.Parse(valorA.ToString()) == Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Double.Parse(valorA.ToString()) == Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Double.Parse(valorA.ToString()) == val);
+                                        default: return null;
+                                    }
+                                case "System.Int32":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE INT Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Int32.Parse(valorA.ToString()) == ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Int32.Parse(valorA.ToString()) == Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Int32.Parse(valorA.ToString()) == Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Int32.Parse(valorA.ToString()) == val);
+                                        default: return null;
+                                    }
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "IGUALACION ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val == Double.Parse(valorB.ToString()));
+                                        case "System.Int32": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val == Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": return (Boolean.Parse(valorA.ToString()) == Boolean.Parse(valorB.ToString()));
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case "!=":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": return (!valorA.ToString().Equals(valorB.ToString()));
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE STRING Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE STRING Y DOUBLE", 0, 0));
+                                            return null;
+                                        case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE STRING Y INT", 0, 0));
+                                            return null;
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE STRING Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Char":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE CHAR Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (!Char.Parse(valorA.ToString()).Equals(Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (((int)Char.Parse(valorA.ToString())) != Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (((int)Char.Parse(valorA.ToString())) != Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE CHAR Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Double":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE DOUBLE Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Double.Parse(valorA.ToString()) != ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Double.Parse(valorA.ToString()) != Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Double.Parse(valorA.ToString()) != Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Double.Parse(valorA.ToString()) != val);
+                                        default: return null;
+                                    }
+                                case "System.Int32":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE INT Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Int32.Parse(valorA.ToString()) != ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Int32.Parse(valorA.ToString()) != Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Int32.Parse(valorA.ToString()) != Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Int32.Parse(valorA.ToString()) != val);
+                                        default: return null;
+                                    }
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "DIFERENCIACION ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val != Double.Parse(valorB.ToString()));
+                                        case "System.Int32": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val != Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": return (Boolean.Parse(valorA.ToString()) != Boolean.Parse(valorB.ToString()));
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case "<":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE ENTRE CHAR Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (((int)Char.Parse(valorA.ToString())) < ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (((int)Char.Parse(valorA.ToString())) < Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (((int)Char.Parse(valorA.ToString())) < Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean":
+                                            errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE ENTRE CHAR Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Double":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE ENTRE DOUBLE Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Double.Parse(valorA.ToString()) < ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Double.Parse(valorA.ToString()) < Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Double.Parse(valorA.ToString()) < Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean":
+                                            val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Double.Parse(valorA.ToString()) < val);
+                                        default: return null;
+                                    }
+                                case "System.Int32":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE ENTRE INT Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Int32.Parse(valorA.ToString()) < ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Int32.Parse(valorA.ToString()) < Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Int32.Parse(valorA.ToString()) < Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean":
+                                            val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Int32.Parse(valorA.ToString()) < val);
+                                        default: return null;
+                                    }
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char":
+                                            errores.Add(new Error("ERROR SEMANTICO", "MENOR QUE ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double":
+                                            val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val < Double.Parse(valorB.ToString()));
+                                        case "System.Int32":
+                                            val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val < Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean":
+                                            val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            int val2 = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (val < val2);
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case "<=":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String":errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL ENTRE CHAR Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (((int)Char.Parse(valorA.ToString())) <= ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (((int)Char.Parse(valorA.ToString())) <= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (((int)Char.Parse(valorA.ToString())) <= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL ENTRE CHAR Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Double":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL ENTRE DOUBLE Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Double.Parse(valorA.ToString()) <= ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Double.Parse(valorA.ToString()) <= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Double.Parse(valorA.ToString()) <= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Double.Parse(valorA.ToString()) <= val);
+                                        default: return null;
+                                    }
+                                case "System.Int32":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL ENTRE INT Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Int32.Parse(valorA.ToString()) <= ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Int32.Parse(valorA.ToString()) <= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Int32.Parse(valorA.ToString()) <= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Int32.Parse(valorA.ToString()) <= val);
+                                        default: return null;
+                                    }
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "MENOR IGUAL ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val <= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val <= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            int val2 = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (val <= val2);
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case ">":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE ENTRE CHAR Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (((int)Char.Parse(valorA.ToString())) > ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (((int)Char.Parse(valorA.ToString())) > Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (((int)Char.Parse(valorA.ToString())) > Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE ENTRE CHAR Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Double":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE ENTRE DOUBLE Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Double.Parse(valorA.ToString()) > ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Double.Parse(valorA.ToString()) > Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Double.Parse(valorA.ToString()) > Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Double.Parse(valorA.ToString()) > val);
+                                        default: return null;
+                                    }
+                                case "System.Int32":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE ENTRE INT Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Int32.Parse(valorA.ToString()) > ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Int32.Parse(valorA.ToString()) > Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Int32.Parse(valorA.ToString()) > Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Int32.Parse(valorA.ToString()) > val);
+                                        default: return null;
+                                    }
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "MAYOR QUE ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val > Double.Parse(valorB.ToString()));
+                                        case "System.Int32": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val > Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            int val2 = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (val > val2);
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case ">=":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL ENTRE CHAR Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (((int)Char.Parse(valorA.ToString())) >= ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (((int)Char.Parse(valorA.ToString())) >= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (((int)Char.Parse(valorA.ToString())) >= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL ENTRE CHAR Y BOOL", 0, 0));
+                                            return null;
+                                        default: return null;
+                                    }
+                                case "System.Double":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL ENTRE DOUBLE Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Double.Parse(valorA.ToString()) >= ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Double.Parse(valorA.ToString()) >= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Double.Parse(valorA.ToString()) >= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Double.Parse(valorA.ToString()) >= val);
+                                        default: return null;
+                                    }
+                                case "System.Int32":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL ENTRE INT Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": return (Int32.Parse(valorA.ToString()) >= ((int)Char.Parse(valorB.ToString())));
+                                        case "System.Double": return (Int32.Parse(valorA.ToString()) >= Double.Parse(valorB.ToString()));
+                                        case "System.Int32": return (Int32.Parse(valorA.ToString()) >= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean": val = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (Int32.Parse(valorA.ToString()) >= val);
+                                        default: return null;
+                                    }
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "MAYOR IGUAL ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val >= Double.Parse(valorB.ToString()));
+                                        case "System.Int32":
+                                            val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            return (val >= Int32.Parse(valorB.ToString()));
+                                        case "System.Boolean":
+                                            val = Boolean.Parse(valorA.ToString()) ? 1 : 0;
+                                            int val2 = Boolean.Parse(valorB.ToString()) ? 1 : 0;
+                                            return (val >= val2);
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case "&&":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "AND NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "AND NO SOPORTA CHAR", 0, 0));
+                                    return null;
+                                case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "AND NO SOPORTA DOUBLE", 0, 0));
+                                    return null;
+                                case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "AND NO SOPORTA INT", 0, 0));
+                                    return null;
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String": errores.Add(new Error("ERROR SEMANTICO", "AND ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "AND ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "AND ENTRE BOOL Y DOUBLE", 0, 0));
+                                            return null;
+                                        case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "AND ENTRE BOOL E INT", 0, 0));
+                                            return null;
+                                        case "System.Boolean": return (Boolean.Parse(valorA.ToString()) && Boolean.Parse(valorB.ToString()));
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
+                        case "||":
+                            switch (valorA.GetType().ToString())
+                            {
+                                case "System.String":
+                                    errores.Add(new Error("ERROR SEMANTICO", "OR NO SOPORTA STRING", 0, 0));
+                                    return null;
+                                case "System.Char":
+                                    errores.Add(new Error("ERROR SEMANTICO", "OR NO SOPORTA CHAR", 0, 0));
+                                    return null;
+                                case "System.Double":
+                                    errores.Add(new Error("ERROR SEMANTICO", "OR NO SOPORTA DOUBLE", 0, 0));
+                                    return null;
+                                case "System.Int32":
+                                    errores.Add(new Error("ERROR SEMANTICO", "OR NO SOPORTA INT", 0, 0));
+                                    return null;
+                                case "System.Boolean":
+                                    switch (valorB.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "OR ENTRE BOOL Y STRING", 0, 0));
+                                            return null;
+                                        case "System.Char":
+                                            errores.Add(new Error("ERROR SEMANTICO", "OR ENTRE BOOL Y CHAR", 0, 0));
+                                            return null;
+                                        case "System.Double":
+                                            errores.Add(new Error("ERROR SEMANTICO", "OR ENTRE BOOL Y DOUBLE", 0, 0));
+                                            return null;
+                                        case "System.Int32":
+                                            errores.Add(new Error("ERROR SEMANTICO", "OR ENTRE BOOL E INT", 0, 0));
+                                            return null;
+                                        case "System.Boolean": return (Boolean.Parse(valorA.ToString()) || Boolean.Parse(valorB.ToString()));
+                                        default: return null;
+                                    }
+                                default: return null;
+                            }
                         default: Console.WriteLine("OPERACION NO MANEJADA");
                             return null;
                     }
@@ -1309,6 +1747,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 {
                     case "FUNCION_NATIVA_PRINT": ejecutarFuncionNativaPrint(sentencia);
                         break;
+                    case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -1327,7 +1767,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             }
             contextoActual = temp;
         }
-        //HACER REVISION PARA BUSCAR EL SIMBOLO EN CONTEXTOS ANTERIORES
+
         private void ejecutarFuncionNativaPrint(ParseTreeNode nodoPrint)
         {
             Object obj = calcularValor(nodoPrint.ChildNodes.ElementAt(0));
@@ -1337,31 +1777,56 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             }
         }
 
+        private void ejecutarFuncionNativaShow(ParseTreeNode nodoShow)
+        {
+            Object titulo = calcularValor(nodoShow.ChildNodes.ElementAt(0));
+            Object mensaje = calcularValor(nodoShow.ChildNodes.ElementAt(1));
+            if (titulo != null && mensaje != null)
+            {
+                MessageBox.Show(mensaje.ToString(), titulo.ToString());
+            }
+        }
+
         private void ejecutarFuncionLocalSinRetorno(ParseTreeNode nodoFuncion)
         {
-            Contexto c = contextoActual;
-            Object obj = null;
-            while (c != null)
-            {
-                obj = c.obtenerSimbolo("@" + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
-                if (obj == null)
-                    c = c.anterior;
-                else
-                    break;
-            }
-
-            
+            Object obj = buscarSimboloEnContexto("@" + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
             if (obj != null)
             {
                 Funcion funcion = (Funcion)obj;
                 if (funcion.parametros.Count == nodoFuncion.ChildNodes.ElementAt(1).ChildNodes.Count)
                 {
-                    Contexto temp = contextoActual;
-                    contextoActual = new Contexto(temp.identificadorClase + ",@" + funcion.identificador); ;
-                    contextoActual.anterior = temp;
-                    contextoActual.tablaDeSimbolos = funcion.tablaDeSimbolos;
-                    ejecutarFuncionSinRetorno(funcion.sentencias);
-                    contextoActual = temp;
+                    bool error = false;
+                    String tipoDatoParametroLocal = "";
+                    for (int i = 0 ; i < nodoFuncion.ChildNodes.ElementAt(1).ChildNodes.Count; i++)
+                    {
+                        Object parametro = calcularValor(nodoFuncion.ChildNodes.ElementAt(1).ChildNodes.ElementAt(i));
+                        if (parametro != null)
+                        {
+                            tipoDatoParametroLocal = tipoDatoSistema(((Variable)funcion.parametros[i]).tipo);
+                            if (tipoDatoParametroLocal.Equals(parametro.GetType().ToString()))
+                            {
+                                if(!funcion.agregarValorParametro(((Variable)funcion.parametros[i]).identificador, parametro, i))
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO SE ENCONTRO PARAMETRO", 0, 0));
+                                    error = true;
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " ESPERABA PARAMETROS DE DISTINTO TIPO", 0, 0));
+                                error = true;
+                            }
+                        }
+                    }
+                    if (!error)
+                    {
+                        Contexto temp = contextoActual, nuevoContexto = actualizarContextoFuncionLocal(contextoActual.identificadorClase.Substring(0, contextoActual.identificadorClase.IndexOf(',')));
+                        contextoActual = new Contexto(nuevoContexto.identificadorClase + ",@" + funcion.identificador);
+                        contextoActual.anterior = nuevoContexto;
+                        contextoActual.tablaDeSimbolos = funcion.tablaDeSimbolos;
+                        ejecutarFuncionSinRetorno(funcion.sentencias);
+                        contextoActual = temp;
+                    }
                 }
                 else
                 {
@@ -1382,6 +1847,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 {
                     case "FUNCION_NATIVA_PRINT": ejecutarFuncionNativaPrint(sentencia);
                         break;
+                    case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -1397,6 +1864,44 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
                 }
+            }
+        }
+
+        private Object buscarSimboloEnContexto(String key)
+        {
+            Contexto c = contextoActual;
+            Object obj = null;
+            while (c != null)
+            {
+                obj = c.obtenerSimbolo(key);
+                if (obj == null)
+                    c = c.anterior;
+                else
+                    return obj;
+            }
+            return obj;
+        }
+
+        private Contexto actualizarContextoFuncionLocal(String identificadorClase)
+        {
+            foreach (Clase c in clases)
+            {
+                if (c.identificador.Equals(identificadorClase))
+                    return new Contexto(c.identificador, c.tablaDeSimbolos);
+            }
+            return null;
+        }
+
+        private String tipoDatoSistema(String tipoLenguaje)
+        {
+            switch (tipoLenguaje.ToLower())
+            {
+                case "int": return "System.Int32";
+                case "bool": return "System.Boolean";
+                case "char": return "System.Char"; 
+                case "string": return "System.String";
+                case "double": return "System.Double";
+                default: return "";
             }
         }
     }
