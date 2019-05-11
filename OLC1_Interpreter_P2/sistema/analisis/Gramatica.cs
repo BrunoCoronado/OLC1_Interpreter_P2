@@ -1,5 +1,7 @@
 ﻿using Irony.Parsing;
+using OLC1_Interpreter_P2.sistema.bean;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,8 +11,13 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 {
     class Gramatica : Grammar 
     {
+        public ArrayList errores;
+
         public Gramatica() : base (caseSensitive: false)
         {
+            //ERRORES
+            errores = new ArrayList();
+
             //COMENTARIOS
             CommentTerminal comentarioLinea = new CommentTerminal("comentarioLinea", ">>", "\n", "\r\n", "\r", "\u2085", "\u2028", "\u2029");
             CommentTerminal comentarioMultiLinea = new CommentTerminal("comentarioMultiLinea", "<-", "->");
@@ -372,6 +379,15 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | identificador
                     //| identificador + corcheteAbre + E + corcheteCierra
             ;
+        }
+
+        public override void ReportParseError(ParsingContext context)
+        {
+            base.ReportParseError(context);
+            if (context.CurrentToken.ValueString.Contains("Invalid character"))
+                errores.Add(new Error("ERROR LEXICO", "NO SE RECONOCIO ESTE SIMBOLO " + context.CurrentToken.ValueString.ToString() , (context.Source.Location.Line + 1), context.Source.Location.Column));
+            else
+                errores.Add(new Error("ERROR SINTACTICO", "NO SE ESPERABA ESTE SIMBOLO " + context.CurrentToken.ValueString.ToString(), (context.Source.Location.Line + 1), context.Source.Location.Column));
         }
     }
 }

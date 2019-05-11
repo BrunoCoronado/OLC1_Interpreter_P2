@@ -16,8 +16,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         private ParseTreeNode raiz;
         private ArrayList clases;
         private ArrayList errores;
-        private Clase /*claseActual,*/ claseMain;
-        //private Boolean mainEncontrado;
+        private Clase claseMain;
         private Contexto contextoActual;
 
         public Interprete()
@@ -25,7 +24,6 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             raiz = null;
             clases = new ArrayList();
             errores = new ArrayList();
-            //claseActual = null;
             claseMain = null;
             contextoActual = null;
         }
@@ -43,16 +41,17 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 grafica.graficar(parseTree.Root);
                 raiz = parseTree.Root;
                 analizarAST();
-                result = reportarErrores();
-                actualizarMain();
-                ejecutarMain();
-                result = reportarErrores();
+                result = reportarErrores(errores);
+                if (actualizarMain())
+                    ejecutarMain();
+                result = reportarErrores(errores);
                 return result;
             }
+            reportarErrores(gramatica.errores);
             return false;
         }
 
-        private Boolean reportarErrores()
+        private Boolean reportarErrores(ArrayList errores)
         {
             if (errores.Count > 0)
             {
@@ -1739,19 +1738,24 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             }
         }
 
-        private void actualizarMain()
+        private Boolean actualizarMain()
         {
-            foreach (Clase c in clases)
+            if (claseMain != null)
             {
-                if (c.identificador.Equals(claseMain.identificador))
+                foreach (Clase c in clases)
                 {
-                    claseMain = c;
-                    //claseActual = c;
-                    contextoActual = new Contexto(c.identificador, c.tablaDeSimbolos);
-                    //aca se deberian de verificar los imports de la clase para agregar los contextos
-                    break;
+                    if (c.identificador.Equals(claseMain.identificador))
+                    {
+                        claseMain = c;
+                        //claseActual = c;
+                        contextoActual = new Contexto(c.identificador, c.tablaDeSimbolos);
+                        //aca se deberian de verificar los imports de la clase para agregar los contextos
+                        return true;
+                    }
                 }
             }
+            errores.Add(new Error("ERROR SEMANTICO", "NO SE ENCONTRO MAIN PARA INICIAR EJECUCION", 0, 0));
+            return false;
         }
 
         private void ejecutarMain()
