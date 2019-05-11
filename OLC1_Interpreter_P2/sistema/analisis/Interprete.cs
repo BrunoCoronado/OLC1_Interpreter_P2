@@ -240,19 +240,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             switch (declaracionAsignacionVariable.ChildNodes.Count)
             {
                 case 3:
-                    switch (declaracionAsignacionVariable.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim().ToLower())
-                    {
-                        case "int": tipoDato = "System.Int32";
-                            break;
-                        case "bool": tipoDato = "System.Boolean";
-                            break;
-                        case "char": tipoDato = "System.Char";
-                            break;
-                        case "string": tipoDato = "System.String";
-                            break;
-                        case "double": tipoDato = "System.Double";
-                            break;
-                    }
+                    tipoDato = tipoDatoSistema(declaracionAsignacionVariable.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim());
                     foreach (ParseTreeNode nodo in declaracionAsignacionVariable.ChildNodes.ElementAt(1).ChildNodes)
                     {
                         valor = calcularValor(declaracionAsignacionVariable.ChildNodes.ElementAt(2));
@@ -273,19 +261,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     }
                     break;
                 case 4:
-                    switch (declaracionAsignacionVariable.ChildNodes.ElementAt(1).ToString().Replace("(Keyword)", "").Trim().ToLower())
-                    {
-                        case "int": tipoDato = "System.Int32";
-                            break;
-                        case "bool": tipoDato = "System.Boolean";
-                            break;
-                        case "char": tipoDato = "System.Char";
-                            break;
-                        case "string": tipoDato = "System.String";
-                            break;
-                        case "double": tipoDato = "System.Double";
-                            break;
-                    }
+                    tipoDato = tipoDatoSistema(declaracionAsignacionVariable.ChildNodes.ElementAt(1).ToString().Replace("(Keyword)", "").Trim());
                     foreach (ParseTreeNode nodo in declaracionAsignacionVariable.ChildNodes.ElementAt(2).ChildNodes)
                     {
                         valor = calcularValor(declaracionAsignacionVariable.ChildNodes.ElementAt(3));
@@ -1793,6 +1769,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
                         break;
+                    case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -1836,15 +1814,14 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         private void ejecutarFuncionNativaWhile(ParseTreeNode nodoWhile)
         {
             Contexto tmp = contextoActual;
-            contextoActual = new Contexto(tmp.identificadorClase + ",@while");
-            contextoActual.anterior = tmp;
-
             Object valor = calcularValor(nodoWhile.ChildNodes.ElementAt(0));
             if (valor.GetType().ToString().Equals("System.Boolean"))
             {
                 Boolean condicion = Boolean.Parse(valor.ToString());
                 while (condicion)
                 {
+                    contextoActual = new Contexto(tmp.identificadorClase + ",@while");
+                    contextoActual.anterior = tmp;
                     if (!ejecutarSentenciasBucle(nodoWhile.ChildNodes.ElementAt(1)))
                     {
                         condicion = Boolean.Parse(calcularValor(nodoWhile.ChildNodes.ElementAt(0)).ToString());
@@ -1859,9 +1836,204 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             {
                 errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO WHILE NO ES DEL TIPO BOOL", 0, 0));
             }
-
-
             contextoActual = tmp;
+        }
+
+        private void ejecutarFuncionNativaFor(ParseTreeNode nodoFor)
+        {
+            ParseTreeNode declaracionesFor = nodoFor.ChildNodes.ElementAt(0);
+            Object valor = null, obj = null, valorCondicion = null;
+            String tipoDato = "";
+            Contexto c = null, tmp = contextoActual;
+            contextoActual = new Contexto(tmp.identificadorClase + ",@for");
+            contextoActual.anterior = tmp;
+            c = contextoActual;
+            tmp = contextoActual;
+            bool errorDeclaracionesFor = false;
+            switch (declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.Count)
+            {
+                case 2:
+                    while (c != null)
+                    {
+                        obj = c.obtenerSimbolo(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+                        if (obj == null)
+                            c = c.anterior;
+                        else
+                            break;
+                    }
+                    if (obj != null)
+                    {
+                        Variable variable = (Variable)obj;
+                        tipoDato = tipoDatoSistema(variable.tipo);
+                        valor = calcularValor(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1));
+                        if (valor != null)
+                        {
+                            if (valor.GetType().ToString().Equals(tipoDato))
+                            {
+                                variable.valor = valor;
+                                if (!c.actualizarSimbolo(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), variable))
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA", 0, 0));
+                                    errorDeclaracionesFor = true;
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO PARA VARIABLE " + variable.identificador + " INVALIDO", 0, 0));
+                                errorDeclaracionesFor = true;
+                            }
+                        }
+                        else
+                        {
+                            errorDeclaracionesFor = true;
+                        }
+                    }
+                    else
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                        errorDeclaracionesFor = true;
+                    }
+                    break;
+                case 3:
+                    tipoDato = tipoDatoSistema(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim());
+                    valor = calcularValor(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(2));
+                    if (valor != null)
+                    {   
+                        if (valor.GetType().ToString().Equals(tipoDato))
+                        {
+                            if (!contextoActual.agregarSimbolo(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), valor)))
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE PARA DECLARACION CICLO FOR", 0, 0));
+                                errorDeclaracionesFor = true;
+                            }
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO PARA VARIABLE " + declaracionesFor.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " INVALIDO EN DECLARACION CICLO FOR", 0, 0));
+                            errorDeclaracionesFor = true;
+                        }
+                    }
+                    else
+                    {
+                        errorDeclaracionesFor = true;
+                    }
+                    break;
+            }
+            valorCondicion = calcularValor(declaracionesFor.ChildNodes.ElementAt(1));
+            if (!valorCondicion.GetType().ToString().Equals("System.Boolean"))
+                errorDeclaracionesFor = true;
+            if (!errorDeclaracionesFor)
+            {
+                Boolean condicion = Boolean.Parse(valorCondicion.ToString());
+                while (condicion)
+                {
+                    contextoActual = new Contexto(tmp.identificadorClase + ",@for-iteracion");
+                    contextoActual.anterior = tmp;
+                    c = contextoActual;
+                    bool errorActualizacionFor = false;
+                    if (!ejecutarSentenciasBucle(nodoFor.ChildNodes.ElementAt(1)))
+                    {
+                        while (c != null)
+                        {
+                            obj = c.obtenerSimbolo(declaracionesFor.ChildNodes.ElementAt(2).ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+                            if (obj == null)
+                                c = c.anterior;
+                            else
+                                break;
+                        }
+                        if (obj != null)
+                        {
+                            Variable variable = (Variable)obj;
+                            switch (declaracionesFor.ChildNodes.ElementAt(2).ChildNodes.ElementAt(1).ToString().Replace("(Key symbol)", "").Trim())
+                            {
+                                case "++":
+                                    switch (variable.valor.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "AUMENTO DENTRO DE FOR NO SOPORTA STRING", 0, 0));
+                                            errorActualizacionFor = true;
+                                            break;
+                                        case "System.Char":
+                                            errores.Add(new Error("ERROR SEMANTICO", "AUMENTO DENTRO DE FOR NO SOPORTA CHAR", 0, 0));
+                                            errorActualizacionFor = true;
+                                            break;
+                                        case "System.Double":
+                                            variable.valor = (Double.Parse(variable.valor.ToString())) + 1;
+                                            if (!c.actualizarSimbolo(variable.identificador, variable))
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " NO DECLARADA EN FOR", 0, 0));
+                                                errorActualizacionFor = true;
+                                            }
+                                            break;
+                                        case "System.Int32":
+                                            variable.valor = (Int32.Parse(variable.valor.ToString())) + 1;
+                                            if (!c.actualizarSimbolo(variable.identificador, variable))
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " NO DECLARADA EN FOR", 0, 0));
+                                                errorActualizacionFor = true;
+                                            }
+                                            break;
+                                        case "System.Boolean":
+                                            errores.Add(new Error("ERROR SEMANTICO", "AUMENTO DENTRO DE FOR NO SOPORTA BOOL", 0, 0));
+                                            errorActualizacionFor = true;
+                                            break;
+                                    }
+                                    break;
+                                case "--":
+                                    switch (variable.valor.GetType().ToString())
+                                    {
+                                        case "System.String":
+                                            errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO DENTRO DE FOR NO SOPORTA STRING", 0, 0));
+                                            errorActualizacionFor = true;
+                                            break;
+                                        case "System.Char":
+                                            errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO DENTRO DE FOR NO SOPORTA CHAR", 0, 0));
+                                            errorActualizacionFor = true;
+                                            break;
+                                        case "System.Double":
+                                            variable.valor = (Double.Parse(variable.valor.ToString())) - 1;
+                                            if (!c.actualizarSimbolo(variable.identificador, variable))
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " NO DECLARADA EN FOR", 0, 0));
+                                                errorActualizacionFor = true;
+                                            }
+                                            break;
+                                        case "System.Int32":
+                                            variable.valor = (Int32.Parse(variable.valor.ToString())) - 1;
+                                            if (!c.actualizarSimbolo(variable.identificador, variable))
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " NO DECLARADA EN FOR", 0, 0));
+                                                errorActualizacionFor = true;
+                                            }
+                                            break;
+                                        case "System.Boolean":
+                                            errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO DENTRO DE FOR NO SOPORTA BOOL", 0, 0));
+                                            errorActualizacionFor = true;
+                                            break;
+                                    }
+                                    break;
+                            }
+                            condicion = Boolean.Parse(calcularValor(declaracionesFor.ChildNodes.ElementAt(1)).ToString());
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "ERROR AL ACTUALIZAR FOR", 0, 0));
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    if (errorActualizacionFor)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "ERROR EN LAS DECLARACIONES DEL FOR ", 0, 0));
+            }
         }
 
         private Boolean ejecutarSentenciasBucle(ParseTreeNode nodoSentencias)
@@ -1880,6 +2052,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
@@ -1966,6 +2140,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;

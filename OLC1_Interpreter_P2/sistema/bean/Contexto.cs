@@ -27,6 +27,13 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _anterior = null;
         }
 
+        public Contexto(String identificadorClase, Hashtable simbolos, Contexto anterior)
+        {
+            _identificadorClase = identificadorClase;
+            _tablaDeSimbolos = simbolos;
+            _anterior = anterior;
+        }
+
         public Boolean agregarSimbolo(String key, Object value)
         {
             if (!_tablaDeSimbolos.ContainsKey(key))

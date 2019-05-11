@@ -156,6 +156,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal FUNCION_NATIVA_PRINT = new NonTerminal("FUNCION_NATIVA_PRINT");
             NonTerminal FUNCION_NATIVA_SHOW = new NonTerminal("FUNCION_NATIVA_SHOW");
             NonTerminal FUNCION_NATIVA_WHILE = new NonTerminal("FUNCION_NATIVA_WHILE");
+            NonTerminal FUNCION_NATIVA_FOR = new NonTerminal("FUNCION_NATIVA_FOR");
             NonTerminal FUNCION_LOCAL = new NonTerminal("FUNCION_LOCAL");
             NonTerminal AUMENTO = new NonTerminal("AUMENTO");
             NonTerminal DECREMENTO = new NonTerminal("DECREMENTO");
@@ -165,12 +166,15 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal SENTENCIA_BUCLE = new NonTerminal("SENTENCIA_BUCLE");
             NonTerminal SENTENCIA_CONTINUAR = new NonTerminal("SENTENCIA_CONTINUAR");
             NonTerminal SENTENCIA_SALIR = new NonTerminal("SENTENCIA_SALIR");
+            NonTerminal DECLARACIONES_FOR = new NonTerminal("DECLARACIONES_FOR");
+            NonTerminal ASIGNACION_DECLARACION_FOR = new NonTerminal("ASIGNACION_DECLARACION_FOR");
+            NonTerminal ACTUALIZACION_FOR = new NonTerminal("ACTUALIZACION_FOR");
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while");
+            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for");
             this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
@@ -287,6 +291,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             FUNCIONES_NATIVAS.Rule = FUNCION_NATIVA_PRINT
                     | FUNCION_NATIVA_SHOW            
                     | FUNCION_NATIVA_WHILE
+                    | FUNCION_NATIVA_FOR
             ;
 
             FUNCION_NATIVA_PRINT.Rule = print + parentesisAbre + E + parentesisCierra + puntoYComa;
@@ -294,6 +299,18 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             FUNCION_NATIVA_SHOW.Rule = show + parentesisAbre + E + coma + E + parentesisCierra + puntoYComa;
 
             FUNCION_NATIVA_WHILE.Rule = _while + parentesisAbre + E + parentesisCierra + llaveAbre  + SENTENCIAS_BUCLE + llaveCierra;
+
+            FUNCION_NATIVA_FOR.Rule = _for + parentesisAbre + DECLARACIONES_FOR + parentesisCierra + llaveAbre + SENTENCIAS_BUCLE + llaveCierra;
+
+            DECLARACIONES_FOR.Rule = ASIGNACION_DECLARACION_FOR + puntoYComa + E + puntoYComa + ACTUALIZACION_FOR;
+
+            ASIGNACION_DECLARACION_FOR.Rule = TIPO_DATO + identificador + igual + E
+                    | identificador + igual + E
+            ;
+
+            ACTUALIZACION_FOR.Rule = DATOS_AUMENTO_DECREMENTO + _aumento
+                    | DATOS_AUMENTO_DECREMENTO + _decremento
+            ;
 
             SENTENCIAS_BUCLE.Rule = MakeStarRule(SENTENCIAS_BUCLE, SENTENCIA_BUCLE);
 
