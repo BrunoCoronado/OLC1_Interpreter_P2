@@ -57,6 +57,21 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _valores.Add(key, valor);
         }
 
+        public Object obtenerValor(String key)
+        {
+            return _valores[key];
+        }
+
+        public Boolean actualizarValor(String key, Object valor)
+        {
+            if (_valores.ContainsKey(key))
+            {
+                _valores[key] = valor;
+                return true;
+            }
+            return false;
+        }
+
         public ArrayList dimensiones { get => _dimensiones;  }
         public Hashtable valores { get => _valores; }
         public int visibilidad { get => _visibilidad; set => _visibilidad = value; }

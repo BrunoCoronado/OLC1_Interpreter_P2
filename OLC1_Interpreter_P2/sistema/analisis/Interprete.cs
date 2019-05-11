@@ -157,6 +157,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(nodo);
                         break;
+                    case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(nodo);
+                        break;
                     case "DECLARACION_FUNCION_VACIA": declaracionFuncionVacia(nodo);
                         break;
                     case "METODO_MAIN": declaracionFuncionMain(nodo);
@@ -483,7 +485,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                     {
                                         if (valor.GetType().ToString().Equals(tipoArreglo))
                                         {
-                                            arreglo.agregarValor(i.ToString() + "-" + j.ToString(), valor);
+                                            arreglo.agregarValor(i.ToString() + j.ToString(), valor);
                                         }
                                         else
                                         {
@@ -518,7 +520,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                             {
                                                 if (valor.GetType().ToString().Equals(tipoArreglo))
                                                 {
-                                                    arreglo.agregarValor(i.ToString() + "-" + j.ToString() + "-" + k.ToString(), valor);
+                                                    arreglo.agregarValor(i.ToString() + j.ToString() + k.ToString(), valor);
                                                 }
                                                 else
                                                 {
@@ -639,7 +641,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                 return null;
                         }
                     }
-                    else
+                    else if (nodoE.ChildNodes.ElementAt(0).ToString().Equals("E"))
                     {
                         Object valOP = resolverExpresion(nodoE.ChildNodes.ElementAt(0));
                         switch (nodoE.ChildNodes.ElementAt(1).ToString().Replace("(Key symbol)", "").Trim())
@@ -672,6 +674,56 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                 Console.WriteLine("CASO NO MANEJADO");
                                 return null;
                         }
+                    }
+                    else
+                    {
+                        String identificadorArreglo = nodoE.ChildNodes.ElementAt(0).ToString().Substring(0, (nodoE.ChildNodes.ElementAt(0).ToString().Length - nodoE.ChildNodes.ElementAt(0).ToString().Substring(nodoE.ChildNodes.ElementAt(0).ToString().LastIndexOf('(') - 1).Length));
+                        Object obj = buscarSimboloEnContexto(identificadorArreglo);
+                        if (obj != null)
+                        {
+                            Arreglo arreglo = (Arreglo)obj;
+                            if (arreglo.valores.Count > 0)
+                            {
+                                if (arreglo.dimensiones.Count == nodoE.ChildNodes.ElementAt(1).ChildNodes.Count)
+                                {
+                                    String key = "";
+                                    for (int i = 0 ; i < arreglo.dimensiones.Count ; i++)
+                                    {
+                                        ParseTreeNode posicion = nodoE.ChildNodes.ElementAt(1).ChildNodes.ElementAt(i);
+                                        Object pos = calcularValor(posicion);
+                                        if (pos.GetType().ToString().Equals("System.Int32"))
+                                        {
+                                            if (Int32.Parse(pos.ToString()) < Int32.Parse(arreglo.dimensiones[i].ToString()))
+                                            {
+                                                key += pos.ToString();
+                                            }
+                                            else
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "POSICION EN ARREGLO " + identificadorArreglo + " FUERA DE RANGO", 0, 0));
+                                                return null;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errores.Add(new Error("ERROR SEMANTICO", "POSICION EN ARREGLO " + identificadorArreglo + " CON VALOR DISTINTO A INT", 0, 0));
+                                            return null;
+                                        }
+                                    }
+                                    return arreglo.obtenerValor(key);
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " SIN VALORES ASIGNADOS", 0, 0));
+                                return null;
+                            }
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " NO DECLARADO EN EL CONTEXTO ACTUAL", 0, 0));
+                            return null;
+                        }
+                        return null;
                     }
                 case 3:
                     int val;
@@ -1787,6 +1839,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(sentencia);
                         break;
+                    case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(sentencia);
+                        break;
                     case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
                         break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
@@ -2159,9 +2213,11 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(sentencia);
                         break;
+                    case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(sentencia);
+                        break;
                     case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
                         break;
-                    default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
+                    default: Console.WriteLine("SENTECIAS NO MANEJADAS EN FUNCION VACIA");
                         break;
                 }
             }
@@ -2351,6 +2407,79 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                             break;
                     }
                     break;
+            }
+        }
+
+        private void ejecutarReasignacionArreglo(ParseTreeNode nodoReasignacion)
+        {
+            String identificadorArreglo = nodoReasignacion.ChildNodes.ElementAt(0).ToString().Substring(0, (nodoReasignacion.ChildNodes.ElementAt(0).ToString().Length - nodoReasignacion.ChildNodes.ElementAt(0).ToString().Substring(nodoReasignacion.ChildNodes.ElementAt(0).ToString().LastIndexOf('(') - 1).Length));
+            Object obj = buscarSimboloEnContexto(identificadorArreglo);
+            if (obj != null)
+            {
+                Arreglo arreglo = (Arreglo)obj;
+                if (arreglo.valores.Count > 0)
+                {
+                    if (arreglo.dimensiones.Count == nodoReasignacion.ChildNodes.ElementAt(1).ChildNodes.Count)
+                    {
+                        String key = "";
+                        for (int i = 0; i < arreglo.dimensiones.Count; i++)
+                        {
+                            Object pos = calcularValor(nodoReasignacion.ChildNodes.ElementAt(1).ChildNodes.ElementAt(i));
+                            if (pos.GetType().ToString().Equals("System.Int32"))
+                            {
+                                if (Int32.Parse(pos.ToString()) < Int32.Parse(arreglo.dimensiones[i].ToString()))
+                                {
+                                    key += pos.ToString();
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "POSICION EN ARREGLO " + identificadorArreglo + " FUERA DE RANGO", 0, 0));
+                                    key = null;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "POSICION EN ARREGLO " + identificadorArreglo + " CON VALOR DISTINTO A INT", 0, 0));
+                                key = null;
+                                break;
+                            }
+                        }
+                        if (key != null)
+                        {
+                            Object val = calcularValor(nodoReasignacion.ChildNodes.ElementAt(2));
+                            if (val.GetType().ToString().Equals(tipoDatoSistema(arreglo.tipo)))
+                            {
+                                arreglo.actualizarValor(key, val);
+                                Contexto c = contextoActual;
+                                while (c != null)
+                                {
+                                    if (c.obtenerSimbolo(identificadorArreglo) == null)
+                                        c = c.anterior;
+                                    else
+                                        break;
+                                }
+                                c.actualizarSimbolo(identificadorArreglo, arreglo);
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " DE DISTINTO TIPO DE DATO AL VALOR ASIGNADO", 0, 0));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " SIN VALORES ASIGNADOS", 0, 0));
+                    }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " SIN VALORES ASIGNADOS", 0, 0));
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " NO DECLARADO EN EL CONTEXTO ACTUAL", 0, 0));
             }
         }
     }

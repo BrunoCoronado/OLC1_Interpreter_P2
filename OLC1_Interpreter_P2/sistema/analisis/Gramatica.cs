@@ -150,6 +150,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal DIMENSIONES_ARREGLO = new NonTerminal("DIMENSIONES_ARREGLO");
             NonTerminal CONTENIDO_ARREGLO = new NonTerminal("CONTENIDO_ARREGLO");
             NonTerminal VALORES_ARREGLO = new NonTerminal("VALORES_ARREGLO");
+            NonTerminal REASIGNACION_VALOR_ARREGLO = new NonTerminal("REASIGNACION_VALOR_ARREGLO");
             NonTerminal DECLARACION_FUNCION_VACIA = new NonTerminal("DECLARACION_FUNCION_VACIA");
             NonTerminal LISTA_PARAMETROS = new NonTerminal("LISTA_PARAMETROS");
             NonTerminal LISTA_PARAMETROS_LLAMADA = new NonTerminal("LISTA_PARAMETROS_LLAMADA");
@@ -218,6 +219,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
+                    | REASIGNACION_VALOR_ARREGLO
                     | DECLARACION_FUNCION_VACIA
             ;
 
@@ -257,6 +259,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | MakePlusRule(VALORES_ARREGLO, coma, CONTENIDO_ARREGLO)    
             ;
 
+            REASIGNACION_VALOR_ARREGLO.Rule = identificador + DIMENSIONES_ARREGLO +  igual + E + puntoYComa;
+
             DECLARACION_FUNCION_VACIA.Rule = identificador + _void + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
                     | identificador + _void + _override + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
                     | visibilidad + identificador + _void + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
@@ -278,6 +282,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
+                    | REASIGNACION_VALOR_ARREGLO
                     | AUMENTO_DECREMENTO
             ;
 
@@ -292,6 +297,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
+                    | REASIGNACION_VALOR_ARREGLO
                     | AUMENTO_DECREMENTO
             ;
 
@@ -377,7 +383,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | caracter
                     | cadena
                     | identificador
-                    //| identificador + corcheteAbre + E + corcheteCierra
+                    | identificador + DIMENSIONES_ARREGLO
             ;
         }
 
