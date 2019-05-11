@@ -610,6 +610,11 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                 errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
                                 return null;
                             }
+                            if (((Variable)obj).valor == null)
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " SIN VALOR ASIGNADO", 0, 0));
+                                return null;
+                            }
                             switch (((Variable)obj).tipo)
                             {
                                 case "char": return Char.Parse(((Variable)obj).valor.ToString());
@@ -623,38 +628,75 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                             return null;
                     }
                 case 2:
-                    Object valOP = resolverExpresion(nodoE.ChildNodes.ElementAt(1));
-                    switch (nodoE.ChildNodes.ElementAt(0).ToString().Replace("(Key symbol)", "").Trim())
+                    if (nodoE.ChildNodes.ElementAt(1).ToString().Equals("E"))
                     {
-                        case "-":
-                            switch (valOP.GetType().ToString())
-                            {
-                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON STRING", 0, 0));
-                                    return null;
-                                case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON CHAR", 0, 0));
-                                    return null;
-                                case "System.Double": return Double.Parse((Double.Parse(valOP.ToString()) * -1).ToString());
-                                case "System.Int32": return Int32.Parse((Int32.Parse(valOP.ToString()) * -1).ToString());
-                                case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON BOOL", 0, 0));
-                                    return null;
-                                default: return null;
-                            }
-                        case "!":
-                            switch (valOP.GetType().ToString())
-                            {
-                                case "System.String": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA STRING", 0, 0));
-                                    return null;
-                                case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA CHAR", 0, 0));
-                                    return null;
-                                case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA DOUBLE", 0, 0));
-                                    return null;
-                                case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA INT", 0, 0));
-                                    return null;
-                                case "System.Boolean": return (!Boolean.Parse(valOP.ToString()));
-                                default: return null;
-                            }
-                        default: Console.WriteLine("CASO NO MANEJADO");
-                            return null;
+                        Object valOP = resolverExpresion(nodoE.ChildNodes.ElementAt(1));
+                        switch (nodoE.ChildNodes.ElementAt(0).ToString().Replace("(Key symbol)", "").Trim())
+                        {
+                            case "-":
+                                switch (valOP.GetType().ToString())
+                                {
+                                    case "System.String": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON STRING", 0, 0));
+                                        return null;
+                                    case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON CHAR", 0, 0));
+                                        return null;
+                                    case "System.Double": return Double.Parse((Double.Parse(valOP.ToString()) * -1).ToString());
+                                    case "System.Int32": return Int32.Parse((Int32.Parse(valOP.ToString()) * -1).ToString());
+                                    case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "SIGNO MENOS CON BOOL", 0, 0));
+                                        return null;
+                                    default: return null;
+                                }
+                            case "!":
+                                switch (valOP.GetType().ToString())
+                                {
+                                    case "System.String": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA STRING", 0, 0));
+                                        return null;
+                                    case "System.Char": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA CHAR", 0, 0));
+                                        return null;
+                                    case "System.Double": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA DOUBLE", 0, 0));
+                                        return null;
+                                    case "System.Int32": errores.Add(new Error("ERROR SEMANTICO", "NOT NO SOPORTA INT", 0, 0));
+                                        return null;
+                                    case "System.Boolean": return (!Boolean.Parse(valOP.ToString()));
+                                    default: return null;
+                                }
+                            default: Console.WriteLine("CASO NO MANEJADO");
+                                return null;
+                        }
+                    }
+                    else
+                    {
+                        Object valOP = resolverExpresion(nodoE.ChildNodes.ElementAt(0));
+                        switch (nodoE.ChildNodes.ElementAt(1).ToString().Replace("(Key symbol)", "").Trim())
+                        {
+                            case "++":
+                                switch (valOP.GetType().ToString())
+                                {
+                                    case "System.String": errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA STRING", 0, 0));
+                                        return null;
+                                    case "System.Char": return ((int)Char.Parse(valOP.ToString())) + 1;
+                                    case "System.Double": return Double.Parse((Double.Parse(valOP.ToString()) + 1).ToString());
+                                    case "System.Int32": return Int32.Parse((Int32.Parse(valOP.ToString())  + 1).ToString());
+                                    case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA CHAR", 0, 0));
+                                        return null;
+                                    default: return null;
+                                }
+                            case "--":
+                                switch (valOP.GetType().ToString())
+                                {
+                                    case "System.String": errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA STRING", 0, 0));
+                                        return null;
+                                    case "System.Char": return ((int)Char.Parse(valOP.ToString())) - 1;
+                                    case "System.Double": return Double.Parse((Double.Parse(valOP.ToString()) - 1).ToString());
+                                    case "System.Int32": return Int32.Parse((Int32.Parse(valOP.ToString()) - 1).ToString());
+                                    case "System.Boolean": errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA CHAR", 0, 0));
+                                        return null;
+                                    default: return null;
+                                }
+                            default:
+                                Console.WriteLine("CASO NO MANEJADO");
+                                return null;
+                        }
                     }
                 case 3:
                     int val;
@@ -1749,6 +1791,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
                         break;
+                    case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -1760,6 +1804,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "DECLARACION_ARREGLO": declaracionArreglo(sentencia);
                         break;
                     case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(sentencia);
+                        break;
+                    case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
                         break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
@@ -1785,6 +1831,76 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             {
                 MessageBox.Show(mensaje.ToString(), titulo.ToString());
             }
+        }
+
+        private void ejecutarFuncionNativaWhile(ParseTreeNode nodoWhile)
+        {
+            Contexto tmp = contextoActual;
+            contextoActual = new Contexto(tmp.identificadorClase + ",@while");
+            contextoActual.anterior = tmp;
+
+            Object valor = calcularValor(nodoWhile.ChildNodes.ElementAt(0));
+            if (valor.GetType().ToString().Equals("System.Boolean"))
+            {
+                Boolean condicion = Boolean.Parse(valor.ToString());
+                while (condicion)
+                {
+                    if (!ejecutarSentenciasBucle(nodoWhile.ChildNodes.ElementAt(1)))
+                    {
+                        condicion = Boolean.Parse(calcularValor(nodoWhile.ChildNodes.ElementAt(0)).ToString());
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO WHILE NO ES DEL TIPO BOOL", 0, 0));
+            }
+
+
+            contextoActual = tmp;
+        }
+
+        private Boolean ejecutarSentenciasBucle(ParseTreeNode nodoSentencias)
+        {
+            for (int i = 0 ; i < nodoSentencias.ChildNodes.Count ; i++)
+            {
+                ParseTreeNode sentencia = nodoSentencias.ChildNodes.ElementAt(i);
+                switch (sentencia.ToString())
+                {
+                    case "SENTENCIA_CONTINUAR": i = nodoSentencias.ChildNodes.Count;
+                        break;
+                    case "SENTENCIA_SALIR":
+                        return true;
+                    case "FUNCION_NATIVA_PRINT": ejecutarFuncionNativaPrint(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
+                        break;
+                    case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
+                        break;
+                    case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
+                        break;
+                    case "ASIGNACION_VARIABLE": asignacionVariable(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_VARIABLE": declaracionAsignacionVariable(sentencia);
+                        break;
+                    case "DECLARACION_ARREGLO": declaracionArreglo(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(sentencia);
+                        break;
+                    case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
+                        break;
+                    default:
+                        Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
+                        break;
+                }
+            }
+            return false;
         }
 
         private void ejecutarFuncionLocalSinRetorno(ParseTreeNode nodoFuncion)
@@ -1849,6 +1965,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
                         break;
+                    case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -1860,6 +1978,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "DECLARACION_ARREGLO": declaracionArreglo(sentencia);
                         break;
                     case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(sentencia);
+                        break;
+                    case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
                         break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
@@ -1902,6 +2022,155 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 case "string": return "System.String";
                 case "double": return "System.Double";
                 default: return "";
+            }
+        }
+
+        private void ejecutarAumentoDecremento(ParseTreeNode nodoOperacion)
+        {
+            String tipo = nodoOperacion.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Substring(nodoOperacion.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().LastIndexOf('(') - 1);
+            String contenido = nodoOperacion.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Substring(0, (nodoOperacion.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0).ToString().Length - tipo.Length));
+            switch (nodoOperacion.ChildNodes.ElementAt(0).ToString())
+            {
+                case "AUMENTO":
+                    switch (tipo.Trim())
+                    {
+                        case "(int)": //valor + 1
+                            break;
+                        case "(double)": //valor + 1
+                            break;
+                        case "(char)": errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA CHAR", 0, 0));
+                            break;
+                        case "(string)": errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA STRING", 0, 0));
+                            break;
+                        case "(bool)": errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA BOOL", 0, 0));
+                            break;
+                        case "(identificador)":
+                            Object obj = null;
+                            Contexto c = contextoActual;
+                            while (c != null)
+                            {
+                                obj = c.obtenerSimbolo(contenido);
+                                if (obj == null)
+                                    c = c.anterior;
+                                else
+                                    break;
+                            }
+                            if (obj != null)
+                            {
+                                Variable variable = (Variable)obj;
+                                if (variable.valor != null)
+                                {
+                                    switch (variable.tipo.ToLower().Trim())
+                                    {
+                                        case "int":
+                                            variable.valor = (Int32.Parse(variable.valor.ToString())) + 1;
+                                            if (!c.actualizarSimbolo(contenido, variable))
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + contenido + " NO DECLARADA", 0, 0));
+                                            }
+                                            break;
+                                        case "double":
+                                            variable.valor = (Double.Parse(variable.valor.ToString())) + 1;
+                                            if (!c.actualizarSimbolo(contenido, variable))
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + contenido + " NO DECLARADA", 0, 0));
+                                            }
+                                            break;
+                                        case "char":
+                                            errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA CHAR", 0, 0));
+                                            break;
+                                        case "string":
+                                            errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA STRING", 0, 0));
+                                            break;
+                                        case "bool":
+                                            errores.Add(new Error("ERROR SEMANTICO", "AUMENTO NO SOPORTA BOOL", 0, 0));
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " SIN VALOR ASIGNADO", 0, 0));
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + contenido + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                            }
+                            break;
+                    }
+                    break;
+                case "DECREMENTO":
+                    switch (tipo.Trim())
+                    {
+                        case "(int)": //valor + 1
+                            break;
+                        case "(double)": //valor + 1
+                            break;
+                        case "(char)":
+                            errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA CHAR", 0, 0));
+                            break;
+                        case "(string)":
+                            errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA STRING", 0, 0));
+                            break;
+                        case "(bool)":
+                            errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA BOOL", 0, 0));
+                            break;
+                        case "(identificador)":
+                            String tipoDato = "";
+                            Object valor = null, obj = null;
+                            Contexto c = contextoActual;
+                            while (c != null)
+                            {
+                                obj = c.obtenerSimbolo(contenido);
+                                if (obj == null)
+                                    c = c.anterior;
+                                else
+                                    break;
+                            }
+                            if (obj != null)
+                            {
+                                Variable variable = (Variable)obj;
+                                if (variable.valor != null)
+                                {
+                                    switch (variable.tipo.ToLower().Trim())
+                                {
+                                    case "int":
+                                        variable.valor = (Int32.Parse(variable.valor.ToString())) - 1;
+                                        if (!c.actualizarSimbolo(contenido, variable))
+                                        {
+                                            errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + contenido + " NO DECLARADA", 0, 0));
+                                        }
+                                        break;
+                                    case "double":
+                                        variable.valor = (Double.Parse(variable.valor.ToString())) - 1;
+                                        if (!c.actualizarSimbolo(contenido, variable))
+                                        {
+                                            errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + contenido + " NO DECLARADA", 0, 0));
+                                        }
+                                        break;
+                                    case "char":
+                                        errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA CHAR", 0, 0));
+                                        break;
+                                    case "string":
+                                        errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA STRING", 0, 0));
+                                        break;
+                                    case "bool":
+                                        errores.Add(new Error("ERROR SEMANTICO", "DECREMENTO NO SOPORTA BOOL", 0, 0));
+                                        break;
+                                }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " SIN VALOR ASIGNADO", 0, 0));
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + contenido + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                            }
+                            break;
+                    }
+                    break;
             }
         }
     }

@@ -56,8 +56,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             var potencia = ToTerm("^");
 
             //AUMENTO Y DECREMENTO
-            var aumento = ToTerm("++");
-            var decremento = ToTerm("--");
+            var _aumento = ToTerm("++");
+            var _decremento = ToTerm("--");
 
             //SIMBOLOS DECLARACION Y ANALISIS
             IdentifierTerminal identificador = new IdentifierTerminal("identificador");
@@ -155,14 +155,23 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal FUNCIONES_NATIVAS = new NonTerminal("FUNCIONES_NATIVAS");
             NonTerminal FUNCION_NATIVA_PRINT = new NonTerminal("FUNCION_NATIVA_PRINT");
             NonTerminal FUNCION_NATIVA_SHOW = new NonTerminal("FUNCION_NATIVA_SHOW");
-            NonTerminal FUNCION_LOCAL = new NonTerminal("FUNCION_LOCAL"); 
+            NonTerminal FUNCION_NATIVA_WHILE = new NonTerminal("FUNCION_NATIVA_WHILE");
+            NonTerminal FUNCION_LOCAL = new NonTerminal("FUNCION_LOCAL");
+            NonTerminal AUMENTO = new NonTerminal("AUMENTO");
+            NonTerminal DECREMENTO = new NonTerminal("DECREMENTO");
+            NonTerminal AUMENTO_DECREMENTO = new NonTerminal("AUMENTO_DECREMENTO");
+            NonTerminal DATOS_AUMENTO_DECREMENTO = new NonTerminal("DATOS_AUMENTO_DECREMENTO");
+            NonTerminal SENTENCIAS_BUCLE = new NonTerminal("SENTENCIAS_BUCLE");
+            NonTerminal SENTENCIA_BUCLE = new NonTerminal("SENTENCIA_BUCLE");
+            NonTerminal SENTENCIA_CONTINUAR = new NonTerminal("SENTENCIA_CONTINUAR");
+            NonTerminal SENTENCIA_SALIR = new NonTerminal("SENTENCIA_SALIR");
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show");
-            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO);
+            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while");
+            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
             this.RegisterOperators(3, Associativity.Left, not);
@@ -258,6 +267,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
+                    | AUMENTO_DECREMENTO
             ;
 
             METODO_MAIN.Rule = main + parentesisAbre + parentesisCierra + llaveAbre + SENTENCIAS_MAIN + llaveCierra;
@@ -271,17 +281,53 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
+                    | AUMENTO_DECREMENTO
             ;
 
             FUNCIONES_NATIVAS.Rule = FUNCION_NATIVA_PRINT
                     | FUNCION_NATIVA_SHOW            
+                    | FUNCION_NATIVA_WHILE
             ;
 
             FUNCION_NATIVA_PRINT.Rule = print + parentesisAbre + E + parentesisCierra + puntoYComa;
 
             FUNCION_NATIVA_SHOW.Rule = show + parentesisAbre + E + coma + E + parentesisCierra + puntoYComa;
 
+            FUNCION_NATIVA_WHILE.Rule = _while + parentesisAbre + E + parentesisCierra + llaveAbre  + SENTENCIAS_BUCLE + llaveCierra;
+
+            SENTENCIAS_BUCLE.Rule = MakeStarRule(SENTENCIAS_BUCLE, SENTENCIA_BUCLE);
+
+            SENTENCIA_BUCLE.Rule = SENTENCIA_SALIR
+                    | SENTENCIA_CONTINUAR
+                    | FUNCIONES_NATIVAS
+                    | FUNCION_LOCAL
+                    | DECLARACION_VARIABLE
+                    | ASIGNACION_VARIABLE
+                    | DECLARACION_ASIGNACION_VARIABLE
+                    | DECLARACION_ARREGLO
+                    | DECLARACION_ASIGNACION_ARREGLO
+                    | AUMENTO_DECREMENTO
+            ;
+
+            SENTENCIA_CONTINUAR.Rule = continuar + puntoYComa;
+
+            SENTENCIA_SALIR.Rule = salir + puntoYComa;
+
             FUNCION_LOCAL.Rule = identificador + parentesisAbre + LISTA_PARAMETROS_LLAMADA + parentesisCierra + puntoYComa;
+
+            AUMENTO_DECREMENTO.Rule = AUMENTO
+                    | DECREMENTO
+            ;
+
+            AUMENTO.Rule = DATOS_AUMENTO_DECREMENTO + _aumento + puntoYComa;
+
+            DECREMENTO.Rule = DATOS_AUMENTO_DECREMENTO + _decremento + puntoYComa;
+
+            DATOS_AUMENTO_DECREMENTO.Rule = numeroEntero
+                    | numeroDecimal
+                    | caracter
+                    | identificador
+            ;
 
             E.Rule = E + suma + E
                     | E + resta + E
@@ -292,6 +338,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | E + or + E
                     | E + and + E
                     | not + E
+                    | E + _aumento
+                    | E + _decremento
                     | E + igualacion + E
                     | E + diferenciacion + E
                     | E + menorQue + E

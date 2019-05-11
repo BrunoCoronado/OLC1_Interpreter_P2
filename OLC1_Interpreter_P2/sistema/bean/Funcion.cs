@@ -16,7 +16,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
         private ParseTreeNode _sentencias;
         private ArrayList _parametros;
         private Hashtable _tablaDeSimbolos;
-
+        
         public Funcion(String identificador, ParseTreeNode sentencias)
         {
             _identificador = identificador;
