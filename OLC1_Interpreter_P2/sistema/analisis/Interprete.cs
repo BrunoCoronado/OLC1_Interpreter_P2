@@ -432,20 +432,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         private Arreglo llenarArreglo(Arreglo arreglo, ParseTreeNode valores)
         {
             Object valor;
-            String tipoArreglo = "";
-            switch (arreglo.tipo.ToLower())
-            {
-                case "int": tipoArreglo = "System.Int32";
-                    break;
-                case "bool": tipoArreglo = "System.Boolean";
-                    break;
-                case "char": tipoArreglo = "System.Char";
-                    break;
-                case "string": tipoArreglo = "System.String";
-                    break;
-                case "double": tipoArreglo = "System.Double";
-                    break;
-            }
+            String tipoArreglo = tipoDatoSistema(arreglo.tipo);
             switch (arreglo.dimensiones.Count)
             {
                 case 1:
@@ -494,11 +481,14 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                         }
                                     }
                                 }
-                                return arreglo;
                             }
-                            errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
-                            return null;
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
+                                return null;
+                            }
                         }
+                        return arreglo;
                     }
                     errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
                     return null;
@@ -529,15 +519,21 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                                 }
                                             }
                                         }
-                                        return arreglo;
                                     }
-                                    errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
-                                    return null;
+                                    else
+                                    {
+                                        errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
+                                        return null;
+                                    }
                                 }
                             }
-                            errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
-                            return null;
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
+                                return null;
+                            }
                         }
+                        return arreglo;
                     }
                     errores.Add(new Error("ERROR SEMANTICO", "CANTIDAD DE ELEMENTOS NO IGUAL AL TAMAÑO DEL ARREGLO " + arreglo.identificador, 0, 0));
                     return null;
@@ -1827,6 +1823,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
+                    case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -2094,6 +2092,189 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             }
         }
 
+        private void ejecutarFuncionNativaIf(ParseTreeNode nodoIf)
+        {
+            Object valor;
+            Contexto tmp = contextoActual;
+            switch (nodoIf.ChildNodes.Count)
+            {
+                case 1:
+                    valor = calcularValor(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0));
+                    if (valor != null)
+                    {
+                        if (valor.GetType().ToString().Equals("System.Boolean"))
+                        {
+                            if (Boolean.Parse(valor.ToString()))
+                            {
+                                contextoActual = new Contexto(tmp.identificadorClase + ",@if");
+                                contextoActual.anterior = tmp;
+                                ejecutarSentenciasBucle(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1));
+                            }   
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                        }
+                    }
+                    else
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                    }
+                    break;
+                case 2:
+                    switch (nodoIf.ChildNodes.ElementAt(1).ToString())
+                    {
+                        case "CONDIDICIONES_ELSE_IF":
+                            valor = calcularValor(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0));
+                            if (valor != null)
+                            {
+                                if (valor.GetType().ToString().Equals("System.Boolean"))
+                                {
+                                    if (Boolean.Parse(valor.ToString()))
+                                    {
+                                        contextoActual = new Contexto(tmp.identificadorClase + ",@if");
+                                        contextoActual.anterior = tmp;
+                                        ejecutarSentenciasBucle(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1));
+                                    }
+                                    else
+                                    {
+                                        foreach (ParseTreeNode nodoElseIf in nodoIf.ChildNodes.ElementAt(1).ChildNodes)
+                                        {
+                                            valor = calcularValor(nodoElseIf.ChildNodes.ElementAt(0));
+                                            if (valor != null)
+                                            {
+                                                if (valor.GetType().ToString().Equals("System.Boolean"))
+                                                {
+                                                    if (Boolean.Parse(valor.ToString()))
+                                                    {
+                                                        contextoActual = new Contexto(tmp.identificadorClase + ",@else-if");
+                                                        contextoActual.anterior = tmp;
+                                                        ejecutarSentenciasBucle(nodoElseIf.ChildNodes.ElementAt(1));
+                                                        break;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA ELSE-IF NO ES DEL TIPO BOOL", 0, 0));
+                                                    break;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                            }
+                            break;
+                        case "CONDICION_ELSE":
+                            valor = calcularValor(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0));
+                            if (valor != null)
+                            {
+                                if (valor.GetType().ToString().Equals("System.Boolean"))
+                                {
+                                    if (Boolean.Parse(valor.ToString()))
+                                    {
+                                        contextoActual = new Contexto(tmp.identificadorClase + ",@if");
+                                        contextoActual.anterior = tmp;
+                                        ejecutarSentenciasBucle(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1));
+                                    }
+                                    else
+                                    {
+                                        contextoActual = new Contexto(tmp.identificadorClase + ",@else");
+                                        contextoActual.anterior = tmp;
+                                        ejecutarSentenciasBucle(nodoIf.ChildNodes.ElementAt(1).ChildNodes.ElementAt(0));
+                                    }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                            }
+                            break;
+                    }
+                    break;
+                case 3:
+                    valor = calcularValor(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(0));
+                    if (valor != null)
+                    {
+                        if (valor.GetType().ToString().Equals("System.Boolean"))
+                        {   
+                            if (Boolean.Parse(valor.ToString()))
+                            {
+                                contextoActual = new Contexto(tmp.identificadorClase + ",@if");
+                                contextoActual.anterior = tmp;
+                                ejecutarSentenciasBucle(nodoIf.ChildNodes.ElementAt(0).ChildNodes.ElementAt(1));
+                            }
+                            else
+                            {
+                                bool elseIfEjecutado = false;
+                                foreach (ParseTreeNode nodoElseIf in nodoIf.ChildNodes.ElementAt(1).ChildNodes)
+                                {
+                                    valor = calcularValor(nodoElseIf.ChildNodes.ElementAt(0));
+                                    if (valor != null)
+                                    {
+                                        if (valor.GetType().ToString().Equals("System.Boolean"))
+                                        {
+                                            if (Boolean.Parse(valor.ToString()))
+                                            {
+                                                contextoActual = new Contexto(tmp.identificadorClase + ",@else-if");
+                                                contextoActual.anterior = tmp;
+                                                ejecutarSentenciasBucle(nodoElseIf.ChildNodes.ElementAt(1));
+                                                elseIfEjecutado = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA ELSE-IF NO ES DEL TIPO BOOL", 0, 0));
+                                            elseIfEjecutado = true;
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                                        elseIfEjecutado = true;
+                                        break;
+                                    }
+                                }
+                                if (!elseIfEjecutado)
+                                {
+                                    contextoActual = new Contexto(tmp.identificadorClase + ",@else");
+                                    contextoActual.anterior = tmp;
+                                    ejecutarSentenciasBucle(nodoIf.ChildNodes.ElementAt(2).ChildNodes.ElementAt(0));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                        }
+                    }
+                    else
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "CONDICION EN SENTENCIA IF NO ES DEL TIPO BOOL", 0, 0));
+                    }
+                    break;
+            }
+            contextoActual = tmp;
+        }
+
         private Boolean ejecutarSentenciasBucle(ParseTreeNode nodoSentencias)
         {
             for (int i = 0 ; i < nodoSentencias.ChildNodes.Count ; i++)
@@ -2112,6 +2293,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
                         break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
@@ -2200,6 +2383,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
                         break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;

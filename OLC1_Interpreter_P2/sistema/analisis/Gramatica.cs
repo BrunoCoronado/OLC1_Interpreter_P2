@@ -165,6 +165,11 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal FUNCION_NATIVA_SHOW = new NonTerminal("FUNCION_NATIVA_SHOW");
             NonTerminal FUNCION_NATIVA_WHILE = new NonTerminal("FUNCION_NATIVA_WHILE");
             NonTerminal FUNCION_NATIVA_FOR = new NonTerminal("FUNCION_NATIVA_FOR");
+            NonTerminal FUNCION_NATIVA_IF = new NonTerminal("FUNCION_NATIVA_IF");
+            NonTerminal CONDIDICIONES_ELSE_IF = new NonTerminal("CONDIDICIONES_ELSE_IF");
+            NonTerminal CONDICION_ELSE_IF = new NonTerminal("CONDICION_ELSE_IF");
+            NonTerminal CONDICION_IF = new NonTerminal("CONDICION_IF");
+            NonTerminal CONDICION_ELSE = new NonTerminal("CONDICION_ELSE");
             NonTerminal FUNCION_LOCAL = new NonTerminal("FUNCION_LOCAL");
             NonTerminal AUMENTO = new NonTerminal("AUMENTO");
             NonTerminal DECREMENTO = new NonTerminal("DECREMENTO");
@@ -182,7 +187,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for");
+            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else");
             this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
@@ -305,6 +310,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | FUNCION_NATIVA_SHOW            
                     | FUNCION_NATIVA_WHILE
                     | FUNCION_NATIVA_FOR
+                    | FUNCION_NATIVA_IF
             ;
 
             FUNCION_NATIVA_PRINT.Rule = print + parentesisAbre + E + parentesisCierra + puntoYComa;
@@ -314,6 +320,20 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             FUNCION_NATIVA_WHILE.Rule = _while + parentesisAbre + E + parentesisCierra + llaveAbre  + SENTENCIAS_BUCLE + llaveCierra;
 
             FUNCION_NATIVA_FOR.Rule = _for + parentesisAbre + DECLARACIONES_FOR + parentesisCierra + llaveAbre + SENTENCIAS_BUCLE + llaveCierra;
+
+            FUNCION_NATIVA_IF.Rule = CONDICION_IF
+                    | CONDICION_IF + CONDICION_ELSE
+                    | CONDICION_IF + CONDIDICIONES_ELSE_IF
+                    | CONDICION_IF + CONDIDICIONES_ELSE_IF + CONDICION_ELSE
+            ;
+
+            CONDIDICIONES_ELSE_IF.Rule = MakePlusRule(CONDIDICIONES_ELSE_IF, CONDICION_ELSE_IF);
+
+            CONDICION_IF.Rule = _if + parentesisAbre + E + parentesisCierra + llaveAbre + SENTENCIAS_BUCLE + llaveCierra; //Para la lista de instrucciones usamos las del bucle por ser igual lo que pueden ejecutar ambas
+
+            CONDICION_ELSE_IF.Rule =  _else + _if + parentesisAbre + E + parentesisCierra + llaveAbre + SENTENCIAS_BUCLE + llaveCierra;
+
+            CONDICION_ELSE.Rule = _else + llaveAbre + SENTENCIAS_BUCLE + llaveCierra;
 
             DECLARACIONES_FOR.Rule = ASIGNACION_DECLARACION_FOR + puntoYComa + E + puntoYComa + ACTUALIZACION_FOR;
 
