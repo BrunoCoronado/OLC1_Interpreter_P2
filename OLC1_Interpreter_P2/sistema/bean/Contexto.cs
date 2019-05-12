@@ -12,12 +12,14 @@ namespace OLC1_Interpreter_P2.sistema.bean
         private String _identificadorClase;
         private Hashtable _tablaDeSimbolos;
         private Contexto _anterior;
+        private ArrayList _imports;
 
         public Contexto(String identificadorClase)
         {
             _identificadorClase = identificadorClase;
             _tablaDeSimbolos = new Hashtable();
             _anterior = null;
+            _imports = new ArrayList();
         }
 
         public Contexto(String identificadorClase, Hashtable simbolos)
@@ -25,6 +27,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _identificadorClase = identificadorClase;
             _tablaDeSimbolos = simbolos;
             _anterior = null;
+            _imports = new ArrayList();
         }
 
         public Contexto(String identificadorClase, Hashtable simbolos, Contexto anterior)
@@ -32,6 +35,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _identificadorClase = identificadorClase;
             _tablaDeSimbolos = simbolos;
             _anterior = anterior;
+            _imports = new ArrayList();
         }
 
         public Boolean agregarSimbolo(String key, Object value)
@@ -59,8 +63,19 @@ namespace OLC1_Interpreter_P2.sistema.bean
             return _tablaDeSimbolos[key];
         }
 
+        public Boolean agregarImport(String identificador)
+        {
+            if (!_imports.Contains(identificador))
+            {
+                _imports.Add(identificador);
+                return true;
+            }
+            return false;
+        }
+
         public String identificadorClase { get => _identificadorClase; set => _identificadorClase = value; }
         public Hashtable tablaDeSimbolos { get => _tablaDeSimbolos; set => _tablaDeSimbolos = value; }
         public Contexto anterior { get => _anterior; set => _anterior = value; }
+        public ArrayList imports { get => _imports; }
     }
 }

@@ -86,7 +86,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case 2:
                         switch (declaracionClase.ChildNodes.ElementAt(1).ToString())
                         {
-                            case "IMPORTAR": //definirImports(declaracionClase.ChildNodes.ElementAt(1), clase);
+                            case "IMPORTAR": definirImports(declaracionClase.ChildNodes.ElementAt(1));
                                 break;
                             case "CUERPO_CLASE":
                                 capturarContenidoClase(declaracionClase.ChildNodes.ElementAt(1));
@@ -94,11 +94,11 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         }
                         break;
                     case 3:
-                        //definirImports(declaracionClase.ChildNodes.ElementAt(1), clase);
+                        definirImports(declaracionClase.ChildNodes.ElementAt(1));
                         capturarContenidoClase(declaracionClase.ChildNodes.ElementAt(2));
                         break;
                 }
-                Clase clase = new Clase(contextoActual.identificadorClase, contextoActual.tablaDeSimbolos);
+                Clase clase = new Clase(contextoActual.identificadorClase, contextoActual.tablaDeSimbolos, contextoActual.imports);
                 clases.Add(clase);
             }
         }
@@ -113,32 +113,28 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     return false;
                 }
             }
-            //claseActual = new Clase(identificador);
             contextoActual = new Contexto(identificador);
             return true;
         }
 
-        private Clase definirImports(ParseTreeNode imports, Clase clase)
+        private void definirImports(ParseTreeNode nodoImports)
         {
-            foreach (ParseTreeNode nodo in imports.ChildNodes)
+            foreach (ParseTreeNode import in nodoImports.ChildNodes)
             {
-                String identificador = nodo.ToString().Replace("(identificador)", "").Trim();
-                bool erroExistencia = false;
-                foreach (String c in clase.imports)
+                if (!import.ToString().Replace("(identificador)", "").Trim().Equals(contextoActual.identificadorClase))
                 {
-                    if (c.Equals(identificador))
+                    if (!contextoActual.agregarImport(import.ToString().Replace("(identificador)", "").Trim()))
                     {
-                        //error semantico - import repetido
-                        erroExistencia = true;
+                        errores.Add(new Error("ERROR SEMANTICO", "IMPORT " + import.ToString().Replace("(identificador)", "").Trim() + " EN LA CLASE" + contextoActual.identificadorClase + " YA EXISTE", 0, 0));
                         break;
                     }
                 }
-                if (!erroExistencia)
+                else
                 {
-                    clase.agregarImport(identificador);
+                    errores.Add(new Error("ERROR SEMANTICO", "IMPORT " + import.ToString().Replace("(identificador)", "").Trim() + " EN LA CLASE" + contextoActual.identificadorClase + " NO PUEDE SER ELLA MISMA", 0, 0));
+                    break;
                 }
             }
-            return clase;
         }
 
         private void capturarContenidoClase(ParseTreeNode cuerpoClase)
@@ -149,19 +145,27 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 {
                     case "DECLARACION_VARIABLE": declaracionVariable(nodo);
                         break;
-                    case "ASIGNACION_VARIABLE": asignacionVariable(nodo);
-                        break;
+                    /*case "ASIGNACION_VARIABLE": asignacionVariable(nodo);
+                        break;*/
                     case "DECLARACION_ASIGNACION_VARIABLE": declaracionAsignacionVariable(nodo);
                         break;
                     case "DECLARACION_ARREGLO": declaracionArreglo(nodo);
                         break;
                     case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(nodo);
                         break;
-                    case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(nodo);
-                        break;
+                    /*case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(nodo);
+                        break;*/
                     case "DECLARACION_FUNCION_VACIA": declaracionFuncionVacia(nodo);
                         break;
+                    case "DECLARACION_FUNCION_RETORNO": declaracionFuncionRetorno(nodo);
+                        break;
                     case "METODO_MAIN": declaracionFuncionMain(nodo);
+                        break;
+                    case "DECLARACION_OBJETO": ejecutarDeclaracionObjeto(nodo);
+                        break;
+                    case "DECLARACION_ASIGNACION_OBJETO": ejecutarDeclaracionAsignacionObjeto(nodo);
+                        break;
+                    case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(nodo);
                         break;
                     default: Console.WriteLine("CASO NO MANEJADO");
                         break;
@@ -559,46 +563,94 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             switch (nodoE.ChildNodes.Count)
             {
                 case 1:
-                    String tipo = nodoE.ChildNodes.ElementAt(0).ToString().Substring(nodoE.ChildNodes.ElementAt(0).ToString().LastIndexOf('(') - 1);
-                    String valor = nodoE.ChildNodes.ElementAt(0).ToString().Substring(0 ,(nodoE.ChildNodes.ElementAt(0).ToString().Length - tipo.Length));
-                    switch (tipo.Trim())
+                    if (nodoE.ChildNodes.ElementAt(0).ToString().Equals("ACCESO_VARIABLE_OBJETO"))
                     {
-                        case "(int)": return Int32.Parse(valor.Trim());
-                        case "(double)": return Double.Parse(valor.Trim());
-                        case "(char)": return Char.Parse(valor.Trim());
-                        case "(string)": return valor;
-                        case "(bool)":
-                            switch (valor.Trim().ToLower())
+                        return ejecutarAccesoObjetoVariable(nodoE.ChildNodes.ElementAt(0));
+                    }
+                    else if (nodoE.ChildNodes.ElementAt(0).ToString().Equals("ACCESO_FUNCION_OBJETO"))
+                    {
+                        ParseTreeNode acceso = nodoE.ChildNodes.ElementAt(0);
+                        Object obj = buscarSimboloEnContexto(acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+                        if (obj != null)
+                        {
+                            if (((Variable)obj).valor != null)
                             {
-                                case "true": return true;
-                                case "false": return false;
-                                case "verdadero": return true;
-                                case "falso": return false;
-                                default: return null;
+                                Object func = ((Clase)((Variable)obj).valor).obtenerSimbolo("@" + acceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim());
+                                if (func != null)
+                                {
+                                    Funcion funcion = (Funcion)func;
+                                    if (funcion.retorno != null)
+                                    {
+                                        return ejecutarAccesoObjetoFuncionConRetorno(funcion.sentencias, funcion.clasePadre);
+                                    }
+                                    else
+                                    {
+                                        errores.Add(new Error("ERROR SEMANTICO", "FUNCION  " + funcion.identificador + " EN VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO TIENE RETORNO", 0, 0));
+                                        return null;
+                                    }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO TIENE ELEMENTO " + acceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), 0, 0));
+                                    return null;
+                                }
                             }
-                        case "(identificador)":
-                            Object obj = buscarSimboloEnContexto(valor);
-                            if (obj == null)
+                            else
                             {
-                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " SIN VALOR ASIGNADO", 0, 0));
                                 return null;
                             }
-                            if (((Variable)obj).valor == null)
-                            {
-                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " SIN VALOR ASIGNADO", 0, 0));
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                            return null;
+                        }
+                        return null;
+                    }
+                    else
+                    {
+                        String tipo = nodoE.ChildNodes.ElementAt(0).ToString().Substring(nodoE.ChildNodes.ElementAt(0).ToString().LastIndexOf('(') - 1);
+                        String valor = nodoE.ChildNodes.ElementAt(0).ToString().Substring(0 ,(nodoE.ChildNodes.ElementAt(0).ToString().Length - tipo.Length));
+                        switch (tipo.Trim())
+                        {
+                            case "(int)": return Int32.Parse(valor.Trim());
+                            case "(double)": return Double.Parse(valor.Trim());
+                            case "(char)": return Char.Parse(valor.Trim());
+                            case "(string)": return valor;
+                            case "(bool)":
+                                switch (valor.Trim().ToLower())
+                                {
+                                    case "true": return true;
+                                    case "false": return false;
+                                    case "verdadero": return true;
+                                    case "falso": return false;
+                                    default: return null;
+                                }
+                            case "(identificador)":
+                                Object obj = buscarSimboloEnContexto(valor);
+                                if (obj == null)
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                                    return null;
+                                }
+                                if (((Variable)obj).valor == null)
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + valor + " SIN VALOR ASIGNADO", 0, 0));
+                                    return null;
+                                }
+                                switch (((Variable)obj).tipo)
+                                {
+                                    case "char": return Char.Parse(((Variable)obj).valor.ToString());
+                                    case "string": return ((Variable)obj).valor.ToString();
+                                    case "int": return Int32.Parse(((Variable)obj).valor.ToString());
+                                    case "double": return Double.Parse(((Variable)obj).valor.ToString());
+                                    case "bool": return Boolean.Parse(((Variable)obj).valor.ToString());
+                                }
                                 return null;
-                            }
-                            switch (((Variable)obj).tipo)
-                            {
-                                case "char": return Char.Parse(((Variable)obj).valor.ToString());
-                                case "string": return ((Variable)obj).valor.ToString();
-                                case "int": return Int32.Parse(((Variable)obj).valor.ToString());
-                                case "double": return Double.Parse(((Variable)obj).valor.ToString());
-                                case "bool": return Boolean.Parse(((Variable)obj).valor.ToString());
-                            }
-                            return null;
-                        default: Console.WriteLine("OPERACION NO MANEJADA");
-                            return null;
+                            default: Console.WriteLine("OPERACION NO MANEJADA");
+                                return null;
+                        }
                     }
                 case 2:
                     if (nodoE.ChildNodes.ElementAt(1).ToString().Equals("E"))
@@ -670,6 +722,10 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                                 Console.WriteLine("CASO NO MANEJADO");
                                 return null;
                         }
+                    }
+                    else if (nodoE.ChildNodes.ElementAt(1).ToString().Equals("LISTA_PARAMETROS_LLAMADA"))
+                    {
+                        return ejecutarFuncionLocalConRetorno(nodoE);
                     }
                     else
                     {
@@ -1685,6 +1741,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             {
                 case 3:
                     funcion = new Funcion(declaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), declaracion.ChildNodes.ElementAt(2));
+                    funcion.clasePadre = contextoActual.identificadorClase;
                     foreach (ParseTreeNode parametro in declaracion.ChildNodes.ElementAt(1).ChildNodes)
                     {
                         if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
@@ -1706,6 +1763,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     if (declaracion.ChildNodes.ElementAt(1).ToString().ToLower().Contains("override (keyword)"))//override
                     {
                         funcion = new Funcion(declaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), declaracion.ChildNodes.ElementAt(3));
+                        funcion.clasePadre = contextoActual.identificadorClase;
                         foreach (ParseTreeNode parametro in declaracion.ChildNodes.ElementAt(2).ChildNodes)
                         {
                             if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
@@ -1726,6 +1784,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     else
                     {
                         funcion = new Funcion(declaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), declaracion.ChildNodes.ElementAt(3), declaracion.ChildNodes.ElementAt(0).ToString().Replace("(visibilidad)", "").Trim());
+                        funcion.clasePadre = contextoActual.identificadorClase;
                         foreach (ParseTreeNode parametro in declaracion.ChildNodes.ElementAt(2).ChildNodes)
                         {
                             if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
@@ -1746,6 +1805,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     break;
                 case 5: //override
                     funcion = new Funcion(declaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), declaracion.ChildNodes.ElementAt(4), declaracion.ChildNodes.ElementAt(0).ToString().Replace("(visibilidad)", "").Trim());
+                    funcion.clasePadre = contextoActual.identificadorClase;
                     foreach (ParseTreeNode parametro in declaracion.ChildNodes.ElementAt(3).ChildNodes)
                     {
                         if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
@@ -1760,6 +1820,99 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         if (!contextoActual.agregarSimbolo(declaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim().Insert(0, "@"), funcion))
                         {
                             errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + declaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE", 0, 0));
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void declaracionFuncionRetorno(ParseTreeNode nodoDeclaracion)
+        {
+            Funcion funcion = null;
+            Boolean error = false;
+            switch (nodoDeclaracion.ChildNodes.Count)
+            {
+                case 4:
+                    funcion = new Funcion(nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(Keyword)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(3));
+                    funcion.clasePadre = contextoActual.identificadorClase;
+                    foreach (ParseTreeNode parametro in nodoDeclaracion.ChildNodes.ElementAt(2).ChildNodes)
+                    {
+                        if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "PARAMETRO " + parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " EN FUNCION " + nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE", 0, 0));
+                            error = true;
+                            break;
+                        }
+                    }
+                    if (!error)
+                    {
+                        if (!contextoActual.agregarSimbolo(funcion.identificador.Insert(0, "@"), funcion))
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + funcion.identificador + " YA EXISTE", 0, 0));
+                        }
+                    }
+                    break;
+                case 5:
+                    if (nodoDeclaracion.ChildNodes.ElementAt(2).ToString().ToLower().Contains("override (keyword)"))
+                    {
+                        funcion = new Funcion(nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(Keyword)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(4));
+                        funcion.clasePadre = contextoActual.identificadorClase;
+                        foreach (ParseTreeNode parametro in nodoDeclaracion.ChildNodes.ElementAt(3).ChildNodes)
+                        {
+                            if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "PARAMETRO " + parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " EN FUNCION " + funcion.identificador + " YA EXISTE", 0, 0));
+                                error = true;
+                                break;
+                            }
+                        }
+                        if (!error)
+                        {
+                            if (!contextoActual.agregarSimbolo(funcion.identificador.Insert(0, "@"), funcion))
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + funcion.identificador + " YA EXISTE", 0, 0));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        funcion = new Funcion(nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(2).ToString().Replace("(Keyword)", "").Trim() , nodoDeclaracion.ChildNodes.ElementAt(4), nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(visibilidad)", "").Trim());
+                        funcion.clasePadre = contextoActual.identificadorClase;
+                        foreach (ParseTreeNode parametro in nodoDeclaracion.ChildNodes.ElementAt(3).ChildNodes)
+                        {
+                            if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
+                            {
+                                errores.Add(new Error("1ERROR SEMANTICO", "PARAMETRO  " + parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " EN FUNCION " + nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE", 0, 0));
+                                error = true;
+                                break;
+                            }
+                        }
+                        if (!error)
+                        {
+                            if (!contextoActual.agregarSimbolo(funcion.identificador.Insert(0, "@"), funcion))
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + funcion.identificador + " YA EXISTE", 0, 0));
+                            }
+                        }
+                    }
+                    break;
+                case 6:
+                    funcion = new Funcion(nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(2).ToString().Replace("(Keyword)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(5), nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(visibilidad)", "").Trim());
+                    funcion.clasePadre = contextoActual.identificadorClase;
+                    foreach (ParseTreeNode parametro in nodoDeclaracion.ChildNodes.ElementAt(4).ChildNodes)
+                    {
+                        if (!funcion.agregarParametro(parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(parametro.ChildNodes.ElementAt(0).ToString().Replace("(Keyword)", "").Trim(), parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "PARAMETRO  " + parametro.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " EN FUNCION " + nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE", 0, 0));
+                            error = true;
+                            break;
+                        }
+                    }
+                    if (!error)
+                    {
+                        if (!contextoActual.agregarSimbolo(funcion.identificador.Insert(0, "@"), funcion))
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + funcion.identificador + " YA EXISTE", 0, 0));
                         }
                     }
                     break;
@@ -1795,10 +1948,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     if (c.identificador.Equals(claseMain.identificador))
                     {
                         claseMain = c;
-                        //claseActual = c;
                         contextoActual = new Contexto(c.identificador, c.tablaDeSimbolos);
-                        //aca se deberian de verificar los imports de la clase para agregar los contextos
-                        return true;
+                        return agregarImports(claseMain.imports);
                     }
                 }
             }
@@ -1840,6 +1991,16 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(sentencia);
                         break;
                     case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
+                        break;
+                    case "DECLARACION_OBJETO": ejecutarDeclaracionObjeto(sentencia);
+                        break;
+                    case "ASIGNACION_OBJETO": ejecutarAsignacionObjeto(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_OBJETO": ejecutarDeclaracionAsignacionObjeto(sentencia);
+                        break;
+                    case "ACCESO_FUNCION_OBJETO": ejecutarAccesoObjetoFuncionSinRetorno(sentencia);
+                        break;
+                    case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
                         break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
@@ -2310,8 +2471,17 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
                         break;
-                    default:
-                        Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
+                    case "DECLARACION_OBJETO": ejecutarDeclaracionObjeto(sentencia);
+                        break;
+                    case "ASIGNACION_OBJETO": ejecutarAsignacionObjeto(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_OBJETO": ejecutarDeclaracionAsignacionObjeto(sentencia);
+                        break;
+                    case "ACCESO_FUNCION_OBJETO": ejecutarAccesoObjetoFuncionSinRetorno(sentencia);
+                        break;
+                    case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
+                        break;
+                    default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
                 }
             }
@@ -2402,10 +2572,131 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
                         break;
+                    case "DECLARACION_OBJETO": ejecutarDeclaracionObjeto(sentencia);
+                        break;
+                    case "ASIGNACION_OBJETO": ejecutarAsignacionObjeto(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_OBJETO": ejecutarDeclaracionAsignacionObjeto(sentencia);
+                        break;
+                    case "ACCESO_FUNCION_OBJETO": ejecutarAccesoObjetoFuncionSinRetorno(sentencia);
+                        break;
+                    case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
+                        break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN FUNCION VACIA");
                         break;
                 }
             }
+        }
+
+        private Object ejecutarFuncionLocalConRetorno(ParseTreeNode nodoFuncion)
+        {
+            Object obj = buscarSimboloEnContexto("@" + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+            if (obj != null)
+            {
+                Funcion funcion = (Funcion)obj;
+                if (funcion.parametros.Count == nodoFuncion.ChildNodes.ElementAt(1).ChildNodes.Count)
+                {
+                    String tipoDatoParametroLocal = "";
+                    for (int i = 0; i < nodoFuncion.ChildNodes.ElementAt(1).ChildNodes.Count; i++)
+                    {
+                        Object parametro = calcularValor(nodoFuncion.ChildNodes.ElementAt(1).ChildNodes.ElementAt(i));
+                        if (parametro != null)
+                        {
+                            tipoDatoParametroLocal = tipoDatoSistema(((Variable)funcion.parametros[i]).tipo);
+                            if (tipoDatoParametroLocal.Equals(parametro.GetType().ToString()))
+                            {
+                                if (!funcion.agregarValorParametro(((Variable)funcion.parametros[i]).identificador, parametro, i))
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO SE ENCONTRO PARAMETRO", 0, 0));
+                                    return null;
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " ESPERABA PARAMETROS DE DISTINTO TIPO", 0, 0));
+                                return null;
+                            }
+                        }
+                    }
+                    Contexto temp = contextoActual, nuevoContexto = actualizarContextoFuncionLocal(contextoActual.identificadorClase.Substring(0, contextoActual.identificadorClase.IndexOf(',')));
+                    contextoActual = new Contexto(nuevoContexto.identificadorClase + ",@" + funcion.identificador);
+                    contextoActual.anterior = nuevoContexto;
+                    contextoActual.tablaDeSimbolos = funcion.tablaDeSimbolos;
+                    Object result = ejecutarFuncionConRetorno(funcion.sentencias);
+                    if (result != null)
+                    {
+                        if (!result.GetType().ToString().Equals(tipoDatoSistema(funcion.retorno)))
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + funcion.identificador + " ESPERABA DISTINTO TIPO DE DATO EN RETORNO", 0, 0));
+                            result = null;
+                        }
+                    }
+                    contextoActual = temp;
+                    return result;
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " ESPERABA PARAMETROS", 0, 0));
+                    return null;
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + nodoFuncion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO HA SIDO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                return null;
+            }
+        }
+
+        private Object ejecutarFuncionConRetorno(ParseTreeNode nodoSentencias)
+        {
+            foreach (ParseTreeNode sentencia in nodoSentencias.ChildNodes)
+            {
+                switch (sentencia.ToString())
+                {
+                    case "FUNCION_NATIVA_PRINT": ejecutarFuncionNativaPrint(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);//podria retornar valor
+                        break;
+                    case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);//podria retornar valor
+                        break;
+                    case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);//podria retornar valor
+                        break;
+                    case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
+                        break;
+                    case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
+                        break;
+                    case "ASIGNACION_VARIABLE": asignacionVariable(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_VARIABLE": declaracionAsignacionVariable(sentencia);
+                        break;
+                    case "DECLARACION_ARREGLO": declaracionArreglo(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_ARREGLO": declaracionAsignacionArreglo(sentencia);
+                        break;
+                    case "REASIGNACION_VALOR_ARREGLO": ejecutarReasignacionArreglo(sentencia);
+                        break;
+                    case "AUMENTO_DECREMENTO": ejecutarAumentoDecremento(sentencia);
+                        break;
+                    case "SENTENCIA_RETURN": return calcularValor(sentencia.ChildNodes.ElementAt(0));
+
+                    case "DECLARACION_OBJETO": ejecutarDeclaracionObjeto(sentencia);
+                        break;
+                    case "ASIGNACION_OBJETO": ejecutarAsignacionObjeto(sentencia);
+                        break;
+                    case "DECLARACION_ASIGNACION_OBJETO": ejecutarDeclaracionAsignacionObjeto(sentencia);
+                        break;
+                    case "ACCESO_FUNCION_OBJETO": ejecutarAccesoObjetoFuncionSinRetorno(sentencia);
+                        break;
+                    case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
+                        break;
+                    default: Console.WriteLine("SENTECIAS NO MANEJADAS EN FUNCION CON RETORNO");
+                        break;
+                }
+            }
+            errores.Add(new Error("ERROR SEMANTICO", "FUNCION " + contextoActual.identificadorClase.Substring(contextoActual.identificadorClase.LastIndexOf("@") + 1) + " ESPERABA SENTENCIA RETURN", 0, 0));
+            return null;
         }
 
         private Object buscarSimboloEnContexto(String key)
@@ -2665,6 +2956,267 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             else
             {
                 errores.Add(new Error("ERROR SEMANTICO", "ARREGLO " + identificadorArreglo + " NO DECLARADO EN EL CONTEXTO ACTUAL", 0, 0));
+            }
+        }
+
+        private Boolean agregarImports(ArrayList imports)
+        {
+            Contexto tmp = contextoActual;
+            bool existeClase;
+            foreach (String import in imports)
+            {
+                existeClase = false;
+                foreach (Clase clase in clases)
+                {
+                    if (import.Equals(clase.identificador))
+                    {
+                        existeClase = true;
+                        while (tmp.anterior != null)
+                            tmp = tmp.anterior;
+                        tmp.anterior = new Contexto(clase.identificador, clase.tablaDeSimbolos);
+                    }
+                }
+                if (!existeClase)
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "NO SE ENCONTRO IMPORT EN CLASE " + contextoActual.identificadorClase, 0, 0));
+                    return false;
+                }
+            }
+            return true; ;
+        }
+
+        private void ejecutarDeclaracionObjeto(ParseTreeNode nodoDeclaracion)
+        {
+            if (!nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim().ToLower().Equals(nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim().ToLower()))
+            {
+                bool existeClase = false;
+                for (int i = 0; i < clases.Count; i++)
+                {
+                    if (((Clase)clases[i]).identificador.Equals(nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim()))
+                    {
+                        existeClase = true;
+                    }
+                }
+                if (existeClase)
+                {
+                    if (!contextoActual.agregarSimbolo(nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim())))
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE", 0, 0));
+                    }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "CLASE " + nodoDeclaracion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO EXISTE PARA DECLARACION DE OBJETO", 0, 0));
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "OBJETO " + nodoDeclaracion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " NO PUEDE TENER EL MISMO NOMBRE QUE LA CLASE", 0, 0));
+            }
+        }
+
+        private void ejecutarAsignacionObjeto(ParseTreeNode nodoAsignacion)
+        {
+            Object obj = null;
+            Contexto c = contextoActual;
+            while (c != null)
+            {
+                obj = c.obtenerSimbolo(nodoAsignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+                if (obj == null)
+                    c = c.anterior;
+                else
+                    break;
+            }
+            if (obj != null)
+            {
+                Variable variable = (Variable)obj;
+                int i;
+                for (i = 0 ; i < clases.Count ; i++)
+                {
+                    if (((Clase)clases[i]).identificador.Equals(variable.tipo))
+                        break;
+
+                }
+                variable.valor = clases[i];
+                if (!c.actualizarSimbolo(variable.identificador, variable))
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " NO DECLARADA", 0, 0));
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoAsignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+            }
+        }
+
+        private void ejecutarDeclaracionAsignacionObjeto(ParseTreeNode nodoDA)
+        {
+            if (!nodoDA.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim().ToLower().Equals(nodoDA.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim().ToLower()))
+            {
+                if (nodoDA.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim().ToLower().Equals(nodoDA.ChildNodes.ElementAt(2).ToString().Replace("(identificador)", "").Trim().ToLower()))
+                {
+                    bool existeClase = false;
+                    int i;
+                    for (i = 0; i < clases.Count; i++)
+                    {
+                        if (((Clase)clases[i]).identificador.Equals(nodoDA.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim()))
+                        {
+                            existeClase = true;
+                            break;
+                        }
+                    }
+                    if (existeClase)
+                    {
+                        if (!contextoActual.agregarSimbolo(nodoDA.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), new Variable(nodoDA.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim(), nodoDA.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), clases[i])))
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoDA.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " YA EXISTE", 0, 0));
+                        }
+                    }
+                    else
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "CLASE " + nodoDA.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO EXISTE PARA DECLARACION DE OBJETO", 0, 0));
+                    }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "OBJETO " + nodoDA.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " NO PUEDE TENER DISTINTAS CLASES EN DECLARACION", 0, 0));
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "OBJETO " + nodoDA.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim() + " NO PUEDE TENER EL MISMO NOMBRE QUE LA CLASE", 0, 0));
+            }
+        }
+
+        private Object ejecutarAccesoObjetoVariable(ParseTreeNode nodoAcceso)
+        {
+            Object obj = buscarSimboloEnContexto(nodoAcceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+            if (obj == null)
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoAcceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+                return null;
+            }
+            if (((Variable)obj).valor == null)
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoAcceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " SIN VALOR ASIGNADO", 0, 0));
+                return null;
+            }
+            try
+            {
+                Object val = ((Clase)((Variable)obj).valor).obtenerVariable(nodoAcceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim()).valor;
+                if (val == null)
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoAcceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO TIENE ELEMENTO " + nodoAcceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), 0, 0));
+                    return null;
+                }
+                else
+                {
+                    return val;
+                }
+            }
+            catch (Exception ex)
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + nodoAcceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO TIENE ELEMENTO " + nodoAcceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), 0, 0));
+                return null;
+            }
+        }
+
+        private Object ejecutarAccesoObjetoFuncionConRetorno(ParseTreeNode sentencias, String identificadorClase)
+        {
+            Contexto tmp = contextoActual;
+            Object result = null;
+            foreach (Clase clase in clases)
+            {
+                if (clase.identificador.Equals(identificadorClase))
+                {
+                    contextoActual = new Contexto(clase.identificador, clase.tablaDeSimbolos);
+                    agregarImports(clase.imports);
+                    result = ejecutarFuncionConRetorno(sentencias);
+                }
+            }
+            contextoActual = tmp;
+            return result;
+        }
+
+        private void ejecutarAccesoObjetoFuncionSinRetorno(ParseTreeNode acceso)
+        {
+            Object obj = buscarSimboloEnContexto(acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+            if (obj != null)
+            {
+                if (((Variable)obj).valor != null)
+                {
+                    Object func = ((Clase)((Variable)obj).valor).obtenerSimbolo("@" + acceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim());
+                    if (func != null)
+                    {
+                        Funcion funcion = (Funcion)func;
+                        if (funcion.retorno == null)
+                        {
+                            Contexto tmp = contextoActual;
+                            foreach (Clase clase in clases)
+                            {
+                                if (clase.identificador.Equals(funcion.clasePadre))
+                                {
+                                    contextoActual = new Contexto(clase.identificador, clase.tablaDeSimbolos);
+                                    agregarImports(clase.imports);
+                                    ejecutarFuncionSinRetorno(funcion.sentencias);
+                                }
+                            }
+                            contextoActual = tmp;
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "FUNCION  " + funcion.identificador + " EN VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " TIENE RETORNO", 0, 0));
+                        }
+                    }
+                    else
+                    {
+                        errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO TIENE ELEMENTO " + acceso.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim(), 0, 0));
+                    }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " SIN VALOR ASIGNADO", 0, 0));
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + acceso.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
+            }
+        }
+
+        private void ejecutarReasignacionVariableObjeto(ParseTreeNode reasignacion)
+        {
+            Object obj = buscarSimboloEnContexto(reasignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim());
+            if (obj != null)
+            {
+                if (((Variable)obj).valor != null)
+                {
+                    Variable variable = ((Clase)((Variable)obj).valor).obtenerVariable(reasignacion.ChildNodes.ElementAt(1).ToString().Replace("(identificador)", "").Trim());
+                    String tipoDato = tipoDatoSistema(variable.tipo);
+                    Object valor = calcularValor(reasignacion.ChildNodes.ElementAt(2));
+                    if (valor != null)
+                    {
+                        if (valor.GetType().ToString().Equals(tipoDato))
+                        {
+                            if (!((Clase)((Variable)obj).valor).actualizarVariable(variable.identificador, valor))
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + variable.identificador + " NO DECLARADA", 0, 0));
+                            }
+                        }
+                        else
+                        {
+                            errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO PARA " + reasignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + "." + variable.identificador + " INVALIDO", 0, 0));
+                        }
+                    }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + reasignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " SIN VALOR ASIGNADO", 0, 0));
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + reasignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
             }
         }
     }

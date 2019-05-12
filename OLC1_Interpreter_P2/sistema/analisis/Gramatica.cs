@@ -152,11 +152,14 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal VALORES_ARREGLO = new NonTerminal("VALORES_ARREGLO");
             NonTerminal REASIGNACION_VALOR_ARREGLO = new NonTerminal("REASIGNACION_VALOR_ARREGLO");
             NonTerminal DECLARACION_FUNCION_VACIA = new NonTerminal("DECLARACION_FUNCION_VACIA");
+            NonTerminal DECLARACION_FUNCION_RETORNO = new NonTerminal("DECLARACION_FUNCION_RETORNO");
             NonTerminal LISTA_PARAMETROS = new NonTerminal("LISTA_PARAMETROS");
             NonTerminal LISTA_PARAMETROS_LLAMADA = new NonTerminal("LISTA_PARAMETROS_LLAMADA");
             NonTerminal PARAMETRO_FUNCION = new NonTerminal("PARAMETRO_FUNCION");
             NonTerminal SENTENCIAS_FUNCION_SIN_RETORNO = new NonTerminal("SENTENCIAS_FUNCION_SIN_RETORNO");
             NonTerminal SENTENCIA_FUNCION_SIN_RETORNO = new NonTerminal("SENTENCIA_FUNCION_SIN_RETORNO");
+            NonTerminal SENTENCIAS_FUNCION_RETORNO = new NonTerminal("SENTENCIAS_FUNCION_RETORNO");
+            NonTerminal SENTENCIA_FUNCION_RETORNO = new NonTerminal("SENTENCIA_FUNCION_RETORNO");
             NonTerminal METODO_MAIN = new NonTerminal("METODO_MAIN");
             NonTerminal SENTENCIAS_MAIN = new NonTerminal("SENTENCIAS_MAIN");
             NonTerminal SENTENCIA_MAIN = new NonTerminal("SENTENCIA_MAIN");
@@ -182,13 +185,20 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal DECLARACIONES_FOR = new NonTerminal("DECLARACIONES_FOR");
             NonTerminal ASIGNACION_DECLARACION_FOR = new NonTerminal("ASIGNACION_DECLARACION_FOR");
             NonTerminal ACTUALIZACION_FOR = new NonTerminal("ACTUALIZACION_FOR");
+            NonTerminal SENTENCIA_RETURN = new NonTerminal("SENTENCIA_RETURN");
+            NonTerminal DECLARACION_OBJETO = new NonTerminal("DECLARACION_OBJETO");
+            NonTerminal ASIGNACION_OBJETO = new NonTerminal("ASIGNACION_OBJETO");
+            NonTerminal DECLARACION_ASIGNACION_OBJETO = new NonTerminal("DECLARACION_ASIGNACION_OBJETO");
+            NonTerminal ACCESO_VARIABLE_OBJETO = new NonTerminal("ACCESO_VARIABLE_OBJETO");
+            NonTerminal ACCESO_FUNCION_OBJETO = new NonTerminal("ACCESO_FUNCION_OBJETO");
+            NonTerminal REASIGNACION_VARIABLE_OBJETO = new NonTerminal("REASIGNACION_VARIABLE_OBJETO");
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";", "," , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else");
-            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE);
+            this.MarkPunctuation("$","{", "}", ";", ",", "." , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else", "return", "new");
+            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE, SENTENCIA_FUNCION_RETORNO);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
             this.RegisterOperators(3, Associativity.Left, not);
@@ -220,12 +230,17 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             SENTENCIA_CLASE.Rule = METODO_MAIN
                     | DECLARACION_VARIABLE
-                    | ASIGNACION_VARIABLE
+                    //| ASIGNACION_VARIABLE
                     | DECLARACION_ASIGNACION_VARIABLE
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
-                    | REASIGNACION_VALOR_ARREGLO
+                    //| REASIGNACION_VALOR_ARREGLO
                     | DECLARACION_FUNCION_VACIA
+                    | DECLARACION_FUNCION_RETORNO
+                    | DECLARACION_OBJETO
+                    //| ASIGNACION_OBJETO
+                    | DECLARACION_ASIGNACION_OBJETO
+
             ;
 
             DECLARACION_VARIABLE.Rule = TIPO_DATO + L_IDENTIFICADOR + puntoYComa
@@ -272,6 +287,12 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | visibilidad + identificador + _void + _override + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_SIN_RETORNO + llaveCierra
             ;
 
+            DECLARACION_FUNCION_RETORNO.Rule = identificador + TIPO_DATO + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_RETORNO + llaveCierra
+                    | identificador + TIPO_DATO + _override + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_RETORNO + llaveCierra
+                    | visibilidad + identificador + TIPO_DATO + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_RETORNO + llaveCierra
+                    | visibilidad + identificador + TIPO_DATO + _override + parentesisAbre + LISTA_PARAMETROS + parentesisCierra + llaveAbre + SENTENCIAS_FUNCION_RETORNO + llaveCierra
+            ;
+
             LISTA_PARAMETROS.Rule = MakeStarRule(LISTA_PARAMETROS, coma, PARAMETRO_FUNCION);
 
             LISTA_PARAMETROS_LLAMADA.Rule = MakeStarRule(LISTA_PARAMETROS_LLAMADA, coma, E);
@@ -289,7 +310,33 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_ARREGLO
                     | REASIGNACION_VALOR_ARREGLO
                     | AUMENTO_DECREMENTO
+                    | DECLARACION_OBJETO
+                    | ASIGNACION_OBJETO
+                    | DECLARACION_ASIGNACION_OBJETO
+                    | ACCESO_FUNCION_OBJETO
+                    | REASIGNACION_VARIABLE_OBJETO
             ;
+
+            SENTENCIAS_FUNCION_RETORNO.Rule = MakeStarRule(SENTENCIAS_FUNCION_RETORNO, SENTENCIA_FUNCION_RETORNO);
+
+            SENTENCIA_FUNCION_RETORNO.Rule = FUNCIONES_NATIVAS
+                    | FUNCION_LOCAL
+                    | DECLARACION_VARIABLE
+                    | ASIGNACION_VARIABLE
+                    | DECLARACION_ASIGNACION_VARIABLE
+                    | DECLARACION_ARREGLO
+                    | DECLARACION_ASIGNACION_ARREGLO
+                    | REASIGNACION_VALOR_ARREGLO
+                    | AUMENTO_DECREMENTO
+                    | SENTENCIA_RETURN
+                    | DECLARACION_OBJETO
+                    | ASIGNACION_OBJETO
+                    | DECLARACION_ASIGNACION_OBJETO
+                    | ACCESO_FUNCION_OBJETO
+                    | REASIGNACION_VARIABLE_OBJETO
+            ;
+
+            SENTENCIA_RETURN.Rule = _return + E + puntoYComa;
 
             METODO_MAIN.Rule = main + parentesisAbre + parentesisCierra + llaveAbre + SENTENCIAS_MAIN + llaveCierra;
 
@@ -304,6 +351,11 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ASIGNACION_ARREGLO
                     | REASIGNACION_VALOR_ARREGLO
                     | AUMENTO_DECREMENTO
+                    | DECLARACION_OBJETO
+                    | ASIGNACION_OBJETO
+                    | DECLARACION_ASIGNACION_OBJETO
+                    | ACCESO_FUNCION_OBJETO
+                    | REASIGNACION_VARIABLE_OBJETO
             ;
 
             FUNCIONES_NATIVAS.Rule = FUNCION_NATIVA_PRINT
@@ -357,6 +409,11 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | DECLARACION_ARREGLO
                     | DECLARACION_ASIGNACION_ARREGLO
                     | AUMENTO_DECREMENTO
+                    | DECLARACION_OBJETO
+                    | ASIGNACION_OBJETO
+                    | DECLARACION_ASIGNACION_OBJETO
+                    | ACCESO_FUNCION_OBJETO
+                    | REASIGNACION_VARIABLE_OBJETO
             ;
 
             SENTENCIA_CONTINUAR.Rule = continuar + puntoYComa;
@@ -378,6 +435,20 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | caracter
                     | identificador
             ;
+
+            DECLARACION_OBJETO.Rule = identificador + identificador + puntoYComa;
+
+            ASIGNACION_OBJETO.Rule = identificador + igual + _new + identificador + parentesisAbre + parentesisCierra + puntoYComa;
+
+            DECLARACION_ASIGNACION_OBJETO.Rule = identificador + identificador + igual + _new + identificador + parentesisAbre + parentesisCierra + puntoYComa;
+
+            ACCESO_VARIABLE_OBJETO.Rule = identificador + punto + identificador;
+
+            ACCESO_FUNCION_OBJETO.Rule = identificador + punto + identificador + parentesisAbre + LISTA_PARAMETROS_LLAMADA + parentesisCierra
+                    | identificador + punto + identificador + parentesisAbre + LISTA_PARAMETROS_LLAMADA + parentesisCierra + puntoYComa
+            ;
+
+            REASIGNACION_VARIABLE_OBJETO.Rule = identificador + punto + identificador + igual + E + puntoYComa;
 
             E.Rule = E + suma + E
                     | E + resta + E
@@ -404,6 +475,9 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | cadena
                     | identificador
                     | identificador + DIMENSIONES_ARREGLO
+                    | identificador + parentesisAbre + LISTA_PARAMETROS_LLAMADA + parentesisCierra
+                    | ACCESO_VARIABLE_OBJETO
+                    | ACCESO_FUNCION_OBJETO
             ;
         }
 

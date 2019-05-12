@@ -21,6 +21,13 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _imports = new ArrayList();
         }
 
+        public Clase(String identificador, Hashtable tablaDeSimbolos, ArrayList imports)
+        {
+            _identificador = identificador;
+            _tablaDeSimbolos = tablaDeSimbolos;
+            _imports = imports;
+        }
+
         public Clase(String identificador)
         {
             _identificador = identificador;
@@ -57,9 +64,7 @@ namespace OLC1_Interpreter_P2.sistema.bean
         {
             return ((Variable)tablaDeSimbolos[key]);
         }
-
-
-
+        
         public Object obtenerSimbolo(String key)
         {
             return _tablaDeSimbolos[key];

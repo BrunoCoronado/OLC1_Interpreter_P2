@@ -12,10 +12,11 @@ namespace OLC1_Interpreter_P2.sistema.bean
     {
         private String _identificador;
         private int _visibilidad;
-        private String _retorno;//va a ser el tipo de dato lo que nos interesa
+        private String _retorno;
         private ParseTreeNode _sentencias;
         private ArrayList _parametros;
         private Hashtable _tablaDeSimbolos;
+        private String _clasePadre;
         
         public Funcion(String identificador, ParseTreeNode sentencias)
         {
@@ -27,12 +28,32 @@ namespace OLC1_Interpreter_P2.sistema.bean
             _tablaDeSimbolos = new Hashtable();
         }
 
+        public Funcion(String identificador, String retorno, ParseTreeNode sentencias)
+        {
+            _identificador = identificador;
+            _sentencias = sentencias;
+            _visibilidad = 0;
+            _retorno = retorno;
+            _parametros = new ArrayList();
+            _tablaDeSimbolos = new Hashtable();
+        }
+
         public Funcion(String identificador, ParseTreeNode sentencias, String visibilidad)
         {
             _identificador = identificador;
             _visibilidad = (visibilidad.Equals("publico")) ? 0 : 1;
             _sentencias = sentencias;
             _retorno = null;
+            _parametros = new ArrayList();
+            _tablaDeSimbolos = new Hashtable();
+        }
+
+        public Funcion(String identificador, String retorno, ParseTreeNode sentencias, String visibilidad)
+        {
+            _identificador = identificador;
+            _visibilidad = (visibilidad.Equals("publico")) ? 0 : 1;
+            _sentencias = sentencias;
+            _retorno = retorno;
             _parametros = new ArrayList();
             _tablaDeSimbolos = new Hashtable();
         }
@@ -65,6 +86,6 @@ namespace OLC1_Interpreter_P2.sistema.bean
         public ParseTreeNode sentencias { get => _sentencias; }
         public ArrayList parametros { get => _parametros; }
         public Hashtable tablaDeSimbolos { get => _tablaDeSimbolos; }
-
+        public String clasePadre { get => _clasePadre; set => _clasePadre = value; }
     }
 }
