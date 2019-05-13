@@ -1986,6 +1986,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
                         break;
+                    case "FUNCION_NATIVA_COMPROBAR": ejecutarFuncionNativaComprobar(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -2028,7 +2030,6 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             Object obj = calcularValor(nodoPrint.ChildNodes.ElementAt(0));
             if (obj != null)
             {
-                //Console.WriteLine(obj.ToString());
                 consola += obj.ToString() + "\n";
             }
         }
@@ -2047,21 +2048,28 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         {
             Contexto tmp = contextoActual;
             Object valor = calcularValor(nodoWhile.ChildNodes.ElementAt(0));
-            if (valor.GetType().ToString().Equals("System.Boolean"))
+            if (valor != null)
             {
-                Boolean condicion = Boolean.Parse(valor.ToString());
-                while (condicion)
+                if (valor.GetType().ToString().Equals("System.Boolean"))
                 {
-                    contextoActual = new Contexto(tmp.identificadorClase + ",@while");
-                    contextoActual.anterior = tmp;
-                    if (!ejecutarSentenciasBucle(nodoWhile.ChildNodes.ElementAt(1)))
+                    Boolean condicion = Boolean.Parse(valor.ToString());
+                    while (condicion)
                     {
-                        condicion = Boolean.Parse(calcularValor(nodoWhile.ChildNodes.ElementAt(0)).ToString());
+                        contextoActual = new Contexto(tmp.identificadorClase + ",@while");
+                        contextoActual.anterior = tmp;
+                        if (!ejecutarSentenciasBucle(nodoWhile.ChildNodes.ElementAt(1)))
+                        {
+                            condicion = Boolean.Parse(calcularValor(nodoWhile.ChildNodes.ElementAt(0)).ToString());
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
-                    else
-                    {
-                        break;
-                    }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO WHILE NO ES DEL TIPO BOOL", 0, 0));
                 }
             }
             else
@@ -2075,21 +2083,28 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         {
             Contexto tmp = contextoActual;
             Object valor = calcularValor(nodoRepeat.ChildNodes.ElementAt(0));
-            if (valor.GetType().ToString().Equals("System.Int32"))
+            if (valor != null)
             {
-                for (int i = 0 ; i < (int)valor; i++)
+                if (valor.GetType().ToString().Equals("System.Int32"))
                 {
-                    contextoActual = new Contexto(tmp.identificadorClase + ",@repeat");
-                    contextoActual.anterior = tmp;
-                    if (ejecutarSentenciasBucle(nodoRepeat.ChildNodes.ElementAt(1)))
+                    for (int i = 0 ; i < (int)valor; i++)
                     {
-                        break;
+                        contextoActual = new Contexto(tmp.identificadorClase + ",@repeat");
+                        contextoActual.anterior = tmp;
+                        if (ejecutarSentenciasBucle(nodoRepeat.ChildNodes.ElementAt(1)))
+                        {
+                            break;
+                        }
                     }
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO REPEAT NO ES DEL TIPO INT", 0, 0));
                 }
             }
             else
             {
-                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO REPEAT NO ES DEL TIPO INT", 0, 0));
+                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO WHILE NO ES DEL TIPO BOOL", 0, 0));
             }
             contextoActual = tmp;
         }
@@ -2295,26 +2310,118 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         {
             Contexto tmp = contextoActual;
             Object valor = calcularValor(nodoHacer.ChildNodes.ElementAt(1));
-            if (valor.GetType().ToString().Equals("System.Boolean"))
+            if (valor != null)
             {
-                Boolean condicion = Boolean.Parse(valor.ToString());
-                do
+                if (valor.GetType().ToString().Equals("System.Boolean"))
                 {
-                    contextoActual = new Contexto(tmp.identificadorClase + ",@hacer");
-                    contextoActual.anterior = tmp;
-                    if (!ejecutarSentenciasBucle(nodoHacer.ChildNodes.ElementAt(0)))
+                    Boolean condicion = Boolean.Parse(valor.ToString());
+                    do
                     {
-                        condicion = Boolean.Parse(calcularValor(nodoHacer.ChildNodes.ElementAt(1)).ToString());
-                    }
-                    else
-                    {
-                        break;
-                    }
-                } while (condicion);
+                        contextoActual = new Contexto(tmp.identificadorClase + ",@hacer");
+                        contextoActual.anterior = tmp;
+                        if (!ejecutarSentenciasBucle(nodoHacer.ChildNodes.ElementAt(0)))
+                        {
+                            condicion = Boolean.Parse(calcularValor(nodoHacer.ChildNodes.ElementAt(1)).ToString());
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    } while (condicion);
+                }
+                else
+                {
+                    errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO HACER-MIENTRAS NO ES DEL TIPO BOOL", 0, 0));
+                }
             }
             else
             {
-                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO HACER-MIENTRAS NO ES DEL TIPO BOOL", 0, 0));
+                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO WHILE NO ES DEL TIPO BOOL", 0, 0));
+            }
+            contextoActual = tmp;
+        }
+
+        private void ejecutarFuncionNativaComprobar(ParseTreeNode nodoComprobar)
+        {
+            Contexto tmp = contextoActual;
+            Object valCaso = null, condicion = calcularValor(nodoComprobar.ChildNodes.ElementAt(0));
+            bool salir = false;
+            if (condicion != null)
+            {
+                switch (nodoComprobar.ChildNodes.Count)
+                {
+                    case 2:
+                        foreach (ParseTreeNode caso in nodoComprobar.ChildNodes.ElementAt(1).ChildNodes)
+                        {
+                            valCaso = calcularValor(caso.ChildNodes.ElementAt(0));
+                            if (valCaso != null)
+                            {
+                                if (condicion.GetType().ToString().Equals(valCaso.GetType().ToString()))
+                                {
+                                    if (valCaso.Equals(condicion))
+                                    {
+                                        salir = ejecutarSentenciasBucle(caso.ChildNodes.ElementAt(1));
+                                        if (salir)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO EN CASO DISTINTO A LA CONDICION", 0, 0));
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO EN CASO NULO", 0, 0));
+                                break;
+                            }
+                        }
+                        break;
+                    case 3:
+                        bool error = false;
+                        foreach (ParseTreeNode caso in nodoComprobar.ChildNodes.ElementAt(1).ChildNodes)
+                        {
+                            valCaso = calcularValor(caso.ChildNodes.ElementAt(0));
+                            if (valCaso != null)
+                            {
+                                if (condicion.GetType().ToString().Equals(valCaso.GetType().ToString()))
+                                {
+                                    if (valCaso.Equals(condicion))
+                                    {
+                                        salir = ejecutarSentenciasBucle(caso.ChildNodes.ElementAt(1));
+                                        if (salir)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO EN CASO DISTINTO A LA CONDICION", 0, 0));
+                                    error = true;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                errores.Add(new Error("ERROR SEMANTICO", "TIPO DE DATO EN CASO NULO", 0, 0));
+                                error = true;
+                                break;
+                            }
+                        }
+                        if (!(salir | error))
+                        {
+                            ejecutarSentenciasBucle(nodoComprobar.ChildNodes.ElementAt(2).ChildNodes.ElementAt(0));
+                        }
+                        break;
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "CONDICION COMPROBAR NULA", 0, 0));
             }
             contextoActual = tmp;
         }
@@ -2527,6 +2634,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
                         break;
+                    case "FUNCION_NATIVA_COMPROBAR": ejecutarFuncionNativaComprobar(sentencia);
+                        break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
                     case "DECLARACION_VARIABLE": declaracionVariable(sentencia);
@@ -2633,6 +2742,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_COMPROBAR": ejecutarFuncionNativaComprobar(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;
@@ -2748,6 +2859,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);//podria retornar valor
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);//podria retornar valor
+                        break;
+                    case "FUNCION_NATIVA_COMPROBAR": ejecutarFuncionNativaComprobar(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
                         break;

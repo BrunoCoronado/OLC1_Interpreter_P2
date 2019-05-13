@@ -71,6 +71,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             var coma = ToTerm(",");
             var igual = ToTerm("=");
             var puntoYComa = ToTerm(";");
+            var dosPuntos = ToTerm(":");
 
             //ARREGLOS
             var array = ToTerm("array");
@@ -112,9 +113,9 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             var _while = ToTerm("while");
 
             var comprobar = ToTerm("comprobar");
-            var caso = ToTerm("caso");
+            var _caso = ToTerm("caso");
             var salir = ToTerm("salir");
-            var defecto = ToTerm("defecto");
+            var _defecto = ToTerm("defecto");
 
             var hacer = ToTerm("hacer");
             var mientras = ToTerm("mientras");
@@ -201,13 +202,17 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal FUNCION_NATIVA_FIGURE = new NonTerminal("FUNCION_NATIVA_FIGURE");
             NonTerminal FUNCION_NATIVA_REPEAT = new NonTerminal("FUNCION_NATIVA_REPEAT");
             NonTerminal FUNCION_NATIVA_DO_WHILE = new NonTerminal("FUNCION_NATIVA_DO_WHILE");
+            NonTerminal FUNCION_NATIVA_COMPROBAR = new NonTerminal("FUNCION_NATIVA_COMPROBAR");
+            NonTerminal LISTA_CASOS = new NonTerminal("LISTA_CASOS");
+            NonTerminal CASO = new NonTerminal("CASO");
+            NonTerminal DEFECTO = new NonTerminal("DEFECTO");
 
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";", ",", "." , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else", "return", "new", "addFigure", "circle", "triangle", "square", "line", "figure", "repeat", "hacer", "mientras");
+            this.MarkPunctuation("$","{", "}", ":", ";", ",", "." , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else", "return", "new", "addFigure", "circle", "triangle", "square", "line", "figure", "repeat", "hacer", "mientras", "comprobar", "caso", "defecto");
             this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE, SENTENCIA_FUNCION_RETORNO, FIGURAS);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
@@ -375,6 +380,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | FUNCION_NATIVA_REPEAT
                     | FUNCION_NATIVA_DO_WHILE
                     | FUNCION_NATIVA_IF
+                    | FUNCION_NATIVA_COMPROBAR
                     | FUNCION_NATIVA_ADDFIGURE
                     | FUNCION_NATIVA_FIGURE
             ;
@@ -390,6 +396,16 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             FUNCION_NATIVA_REPEAT.Rule = repeat + parentesisAbre + E + parentesisCierra + llaveAbre + SENTENCIAS_BUCLE + llaveCierra;
 
             FUNCION_NATIVA_DO_WHILE.Rule = hacer + llaveAbre + SENTENCIAS_BUCLE + llaveCierra + mientras + parentesisAbre + E + parentesisCierra + puntoYComa;
+
+            FUNCION_NATIVA_COMPROBAR.Rule = comprobar + parentesisAbre + E + parentesisCierra + llaveAbre  + LISTA_CASOS + llaveCierra
+                    | comprobar + parentesisAbre + E + parentesisCierra + llaveAbre + LISTA_CASOS  + DEFECTO + llaveCierra
+            ;
+
+            LISTA_CASOS.Rule = MakePlusRule(LISTA_CASOS, CASO);
+
+            CASO.Rule = _caso + E + dosPuntos + SENTENCIAS_BUCLE;
+
+            DEFECTO.Rule = _defecto + dosPuntos + SENTENCIAS_BUCLE;
 
             FUNCION_NATIVA_ADDFIGURE.Rule = addFigure + parentesisAbre + FIGURAS + parentesisCierra + puntoYComa;
 
