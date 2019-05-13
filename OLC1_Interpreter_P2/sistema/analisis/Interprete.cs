@@ -1980,6 +1980,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
                         break;
+                    case "FUNCION_NATIVA_DO_WHILE": ejecutarFuncionNativaDoWhile(sentencia);
+                        break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
@@ -2077,7 +2079,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             {
                 for (int i = 0 ; i < (int)valor; i++)
                 {
-                    contextoActual = new Contexto(tmp.identificadorClase + ",@while");
+                    contextoActual = new Contexto(tmp.identificadorClase + ",@repeat");
                     contextoActual.anterior = tmp;
                     if (ejecutarSentenciasBucle(nodoRepeat.ChildNodes.ElementAt(1)))
                     {
@@ -2289,6 +2291,34 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             }
         }
 
+        private void ejecutarFuncionNativaDoWhile(ParseTreeNode nodoHacer)
+        {
+            Contexto tmp = contextoActual;
+            Object valor = calcularValor(nodoHacer.ChildNodes.ElementAt(1));
+            if (valor.GetType().ToString().Equals("System.Boolean"))
+            {
+                Boolean condicion = Boolean.Parse(valor.ToString());
+                do
+                {
+                    contextoActual = new Contexto(tmp.identificadorClase + ",@hacer");
+                    contextoActual.anterior = tmp;
+                    if (!ejecutarSentenciasBucle(nodoHacer.ChildNodes.ElementAt(0)))
+                    {
+                        condicion = Boolean.Parse(calcularValor(nodoHacer.ChildNodes.ElementAt(1)).ToString());
+                    }
+                    else
+                    {
+                        break;
+                    }
+                } while (condicion);
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO HACER-MIENTRAS NO ES DEL TIPO BOOL", 0, 0));
+            }
+            contextoActual = tmp;
+        }
+
         private void ejecutarFuncionNativaIf(ParseTreeNode nodoIf)
         {
             Object valor;
@@ -2493,6 +2523,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
+                    case "FUNCION_NATIVA_DO_WHILE": ejecutarFuncionNativaDoWhile(sentencia);
+                        break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
                         break;
                     case "FUNCION_LOCAL": ejecutarFuncionLocalSinRetorno(sentencia);
@@ -2595,6 +2627,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
                         break;
                     case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_DO_WHILE": ejecutarFuncionNativaDoWhile(sentencia);
                         break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
@@ -2706,6 +2740,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
                         break;
                     case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_DO_WHILE": ejecutarFuncionNativaDoWhile(sentencia);
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);//podria retornar valor
                         break;
