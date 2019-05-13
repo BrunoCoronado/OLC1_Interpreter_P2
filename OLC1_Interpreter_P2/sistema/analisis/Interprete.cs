@@ -8,16 +8,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace OLC1_Interpreter_P2.sistema.analisis
 {
     class Interprete : Grammar
     {
-        private ParseTreeNode raiz;
+        public ParseTreeNode raiz;
         private ArrayList clases;
-        private ArrayList errores;
+        public ArrayList errores;
         private Clase claseMain;
         private Contexto contextoActual;
+        public String consola;
+        public List<Simbolo> simbolos;
 
         public Interprete()
         {
@@ -26,6 +32,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             errores = new ArrayList();
             claseMain = null;
             contextoActual = null;
+            simbolos = new List<Simbolo>();
         }
 
         public bool analizar(String contenido)
@@ -37,8 +44,6 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             Boolean result = true;
             if (parseTree.Root != null)
             {
-                Grafica grafica = new Grafica();
-                grafica.graficar(parseTree.Root);
                 raiz = parseTree.Root;
                 analizarAST();
                 result = reportarErrores(errores);
@@ -48,6 +53,7 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                 return result;
             }
             reportarErrores(gramatica.errores);
+            errores = gramatica.errores;
             return false;
         }
 
@@ -55,8 +61,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
         {
             if (errores.Count > 0)
             {
-                Reporte reporte = new Reporte();
-                reporte.reporteErrores(errores);
+                //Reporte reporte = new Reporte();
+                //reporte.reporteErrores(errores);
                 return false;
             }
             return true;
@@ -2002,6 +2008,10 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
                         break;
+                    case "FUNCION_NATIVA_ADDFIGURE": ejecutarAddFigure(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_FIGURE": ejecutarFigure(sentencia);
+                        break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
                 }
@@ -2014,7 +2024,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             Object obj = calcularValor(nodoPrint.ChildNodes.ElementAt(0));
             if (obj != null)
             {
-                Console.WriteLine(obj.ToString());
+                //Console.WriteLine(obj.ToString());
+                consola += obj.ToString() + "\n";
             }
         }
 
@@ -2481,6 +2492,10 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
                         break;
+                    case "FUNCION_NATIVA_ADDFIGURE": ejecutarAddFigure(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_FIGURE": ejecutarFigure(sentencia);
+                        break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN MAIN");
                         break;
                 }
@@ -2581,6 +2596,10 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "ACCESO_FUNCION_OBJETO": ejecutarAccesoObjetoFuncionSinRetorno(sentencia);
                         break;
                     case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_ADDFIGURE": ejecutarAddFigure(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_FIGURE": ejecutarFigure(sentencia);
                         break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN FUNCION VACIA");
                         break;
@@ -2690,6 +2709,10 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "ACCESO_FUNCION_OBJETO": ejecutarAccesoObjetoFuncionSinRetorno(sentencia);
                         break;
                     case "REASIGNACION_VARIABLE_OBJETO": ejecutarReasignacionVariableObjeto(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_ADDFIGURE": ejecutarAddFigure(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_FIGURE": ejecutarFigure(sentencia);
                         break;
                     default: Console.WriteLine("SENTECIAS NO MANEJADAS EN FUNCION CON RETORNO");
                         break;
@@ -3218,6 +3241,67 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             {
                 errores.Add(new Error("ERROR SEMANTICO", "VARIABLE " + reasignacion.ChildNodes.ElementAt(0).ToString().Replace("(identificador)", "").Trim() + " NO DECLARADA EN EL CONTEXTO ACTUAL", 0, 0));
             }
+        }
+
+        private void ejecutarAddFigure(ParseTreeNode nodoAdd)
+        {
+
+            ParseTreeNode figura = nodoAdd.ChildNodes.ElementAt(0);
+            switch (figura.ToString())
+            {
+                case "FUNCION_NATIVA_CIRCLE": 
+                    break;
+                case "FUNCION_NATIVA_TRIANGLE":
+                    break;
+                case "FUNCION_NATIVA_SQUARE":
+                    break;
+                case "FUNCION_NATIVA_LINE":
+                    break;
+
+            }
+        }
+
+        private void ejecutarFigure(ParseTreeNode nodoFigure)
+        {
+
+        }
+
+        private void listarSimbolos()
+        {
+            foreach (Clase clase in clases)
+            {
+                foreach (String key in clase.tablaDeSimbolos.Keys)
+                {
+                    if (!key.Contains("@"))
+                    {
+                        simbolos.Add(new Simbolo(key, ((Variable)clase.tablaDeSimbolos[key]).valor.ToString(), clase.identificador));
+                    }
+                    else
+                    {
+                        try
+                        {
+                            if (((Funcion)clase.tablaDeSimbolos[key]).retorno == null)
+                            {
+                                simbolos.Add(new Simbolo(key, "void", clase.identificador));
+                            }
+                            else
+                            {
+                                simbolos.Add(new Simbolo(key, ((Funcion)clase.tablaDeSimbolos[key]).retorno.ToString(), clase.identificador));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            simbolos.Add(new Simbolo(key, clase.tablaDeSimbolos[key].ToString(), clase.identificador));
+                        }
+                    }
+                }
+            }
+        }
+
+        public List<Simbolo> listaSimbolos()
+        {
+            listarSimbolos();
+            return simbolos;
         }
     }
 }

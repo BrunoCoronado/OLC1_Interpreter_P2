@@ -18,7 +18,7 @@ namespace OLC1_Interpreter_P2.sistema.administracion
                 {
                     String linea;
                     while ((linea = streamReader.ReadLine()) != null)
-                        contenido += linea;
+                        contenido += linea + "\n";
                 }
             }
             catch (Exception ex)

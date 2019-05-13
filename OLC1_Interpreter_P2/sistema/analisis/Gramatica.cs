@@ -192,13 +192,21 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             NonTerminal ACCESO_VARIABLE_OBJETO = new NonTerminal("ACCESO_VARIABLE_OBJETO");
             NonTerminal ACCESO_FUNCION_OBJETO = new NonTerminal("ACCESO_FUNCION_OBJETO");
             NonTerminal REASIGNACION_VARIABLE_OBJETO = new NonTerminal("REASIGNACION_VARIABLE_OBJETO");
+            NonTerminal FUNCION_NATIVA_ADDFIGURE = new NonTerminal("FUNCION_NATIVA_ADDFIGURE");
+            NonTerminal FIGURAS = new NonTerminal("FIGURAS");
+            NonTerminal FUNCION_NATIVA_CIRCLE = new NonTerminal("FUNCION_NATIVA_CIRCLE");
+            NonTerminal FUNCION_NATIVA_TRIANGLE = new NonTerminal("FUNCION_NATIVA_TRIANGLE");
+            NonTerminal FUNCION_NATIVA_SQUARE = new NonTerminal("FUNCION_NATIVA_SQUARE");
+            NonTerminal FUNCION_NATIVA_LINE = new NonTerminal("FUNCION_NATIVA_LINE");
+            NonTerminal FUNCION_NATIVA_FIGURE = new NonTerminal("FUNCION_NATIVA_FIGURE");
+
 
             //PREFERENCIAS
             this.Root = A;
             this.NonGrammarTerminals.Add(comentarioLinea);
             this.NonGrammarTerminals.Add(comentarioMultiLinea);
-            this.MarkPunctuation("$","{", "}", ";", ",", "." , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else", "return", "new");
-            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE, SENTENCIA_FUNCION_RETORNO);
+            this.MarkPunctuation("$","{", "}", ";", ",", "." , "=", "]", "[", "(", ")", "clase", "importar", "array", "void", "main", "print", "show", "while", "for", "if", "else", "return", "new", "addFigure", "circle", "triangle", "square", "line", "figure");
+            this.MarkTransient(A, SENTENCIA, SENTENCIA_CLASE, TIPO_DATO, CONTENIDO_ARREGLO, SENTENCIA_MAIN, FUNCIONES_NATIVAS, SENTENCIA_FUNCION_SIN_RETORNO, DATOS_AUMENTO_DECREMENTO, SENTENCIA_BUCLE, SENTENCIA_FUNCION_RETORNO, FIGURAS);
             this.RegisterOperators(1, Associativity.Left, or);
             this.RegisterOperators(2, Associativity.Left, and);
             this.RegisterOperators(3, Associativity.Left, not);
@@ -363,6 +371,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     | FUNCION_NATIVA_WHILE
                     | FUNCION_NATIVA_FOR
                     | FUNCION_NATIVA_IF
+                    | FUNCION_NATIVA_ADDFIGURE
+                    | FUNCION_NATIVA_FIGURE
             ;
 
             FUNCION_NATIVA_PRINT.Rule = print + parentesisAbre + E + parentesisCierra + puntoYComa;
@@ -373,11 +383,29 @@ namespace OLC1_Interpreter_P2.sistema.analisis
 
             FUNCION_NATIVA_FOR.Rule = _for + parentesisAbre + DECLARACIONES_FOR + parentesisCierra + llaveAbre + SENTENCIAS_BUCLE + llaveCierra;
 
+            FUNCION_NATIVA_ADDFIGURE.Rule = addFigure + parentesisAbre + FIGURAS + parentesisCierra + puntoYComa;
+
+            FIGURAS.Rule = FUNCION_NATIVA_CIRCLE
+                    | FUNCION_NATIVA_TRIANGLE
+                    | FUNCION_NATIVA_SQUARE
+                    | FUNCION_NATIVA_LINE
+            ;
+
+            FUNCION_NATIVA_CIRCLE.Rule = circle + parentesisAbre + E + coma + E + coma + E + coma + E + coma + E + parentesisCierra;
+
+            FUNCION_NATIVA_TRIANGLE.Rule = triangle + parentesisAbre + E + coma + E + coma + E + coma + E + coma + E + coma + E + coma + E + coma + E + parentesisCierra;
+
+            FUNCION_NATIVA_SQUARE.Rule = square + parentesisAbre + E + coma + E + coma + E + coma + E + coma + E + coma + E + parentesisCierra;
+
+            FUNCION_NATIVA_LINE.Rule = line+ parentesisAbre + E + coma + E + coma + E + coma + E + coma + E + coma + E + parentesisCierra;
+
             FUNCION_NATIVA_IF.Rule = CONDICION_IF
                     | CONDICION_IF + CONDICION_ELSE
                     | CONDICION_IF + CONDIDICIONES_ELSE_IF
                     | CONDICION_IF + CONDIDICIONES_ELSE_IF + CONDICION_ELSE
             ;
+
+            FUNCION_NATIVA_FIGURE.Rule = figure + parentesisAbre + E + parentesisCierra + puntoYComa;
 
             CONDIDICIONES_ELSE_IF.Rule = MakePlusRule(CONDIDICIONES_ELSE_IF, CONDICION_ELSE_IF);
 

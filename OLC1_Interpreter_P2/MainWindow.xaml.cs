@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using OLC1_Interpreter_P2.sistema.administracion;
 using OLC1_Interpreter_P2.sistema.analisis;
+using OLC1_Interpreter_P2.sistema.graficador;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,7 @@ namespace OLC1_Interpreter_P2
         private int contadorTabs;
         private Boolean removiendoTab;
         private Archivo archivo;
+        private Interprete interprete;
 
         public MainWindow()
         {
@@ -142,23 +144,83 @@ namespace OLC1_Interpreter_P2
             {
                 archivo.nuevoArchivo(saveFileDialog.FileName);
                 (this.tabEditor.SelectedItem as TabItem).Header = saveFileDialog.FileName;
+                ((this.tabEditor.SelectedItem as TabItem).Content as TextBox).Text = "";
             }
         }
 
         private void Compilar_Click(object sender, RoutedEventArgs e)
         {
-            Interprete interprete = new Interprete();
-            if (interprete.analizar(((this.tabEditor.SelectedItem as TabItem).Content as TextBox).Text + "$"))
-                MessageBox.Show("cadena valida");
-            else
-                MessageBox.Show("cadena invalida");
             try
             {
-                
+                interprete = new Interprete();
+                String contenido = "";
+                for (int i = 0 ; i < (tabEditor.Items.Count - 1) ; i++)
+                    contenido += ((TextBox)((TabItem)(tabEditor.Items[i])).Content).Text + "\n";
+                if (interprete.analizar(contenido + "$")) { 
+                    txtConsola.Text += interprete.consola;
+                    dgSimbolos.ItemsSource = interprete.listaSimbolos();
+                    MessageBox.Show("cadena valida");
+                }
+                else
+                    MessageBox.Show("cadena invalida");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR AL COMPILAR EL CODIGO"); 
+                MessageBox.Show("ERROR AL COMPILAR EL CODIGO");
+            }
+        }
+
+        private void AST_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (interprete != null)
+                {
+                    if (interprete.raiz != null)
+                    {
+                        Grafica grafica = new Grafica();
+                        grafica.graficar(interprete.raiz);
+                    }
+                    else
+                    {
+                        MessageBox.Show("ERRORES EN EL CODIGO");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("NO HAY CONTENIDO ANALIZADO");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("ERROR AL GRAFICAR");
+            }
+        }
+
+        private void Errores_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (interprete != null)
+                {
+                    if (interprete.errores.Count > 0)
+                    {
+                        Reporte reporte = new Reporte();
+                        reporte.reporteErrores(interprete.errores);
+                    }
+                    else
+                    {
+                        MessageBox.Show("CODIGO SIN ERRORES");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("NO HAY CONTENIDO ANALIZADO");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("ERROR AL REPORTAR ERRORES");
             }
         }
 

@@ -19,24 +19,19 @@
             <MenuItem Header="Herramientas">
                 <MenuItem Header="Compilar" HorizontalAlignment="Left" Width="auto" Click="Compilar_Click"/>
                 <Separator HorizontalAlignment="Left" Width="auto"/>
-                <MenuItem Header="Iniciar Conexión" HorizontalAlignment="Left" Width="auto"/>
             </MenuItem>
             <MenuItem Header="Reportes">
-                <MenuItem Header="Errores" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="Errores" HorizontalAlignment="Left" Width="auto" Click="Errores_Click"/>
                 <Separator HorizontalAlignment="Left" Width="auto"/>
-                <MenuItem Header="AST" HorizontalAlignment="Left" Width="auto"/>
+                <MenuItem Header="AST" HorizontalAlignment="Left" Width="auto" Click="AST_Click"/>
             </MenuItem>
         </Menu>
         <TabControl DockPanel.Dock="Bottom">
             <TabItem Header="Consola">
-                <TextBox AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="120px" Width="Auto" IsEnabled="True" />
+                <TextBox Name="txtConsola" AcceptsTab="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="120px" Width="Auto" IsEnabled="True" />
             </TabItem>
             <TabItem Header="Simbolos">
-                <DataGrid Height="120px">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Nombre" Width="auto"/>
-                        <DataGridTextColumn Header="Valor" Width="auto"/>
-                    </DataGrid.Columns>
+                <DataGrid Name="dgSimbolos" Height="120px" IsReadOnly="True">
                 </DataGrid>
             </TabItem>
         </TabControl>
