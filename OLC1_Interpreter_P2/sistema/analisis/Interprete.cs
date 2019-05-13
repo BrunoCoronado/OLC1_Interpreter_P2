@@ -1978,6 +1978,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
                         break;
+                    case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
+                        break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
@@ -2063,6 +2065,29 @@ namespace OLC1_Interpreter_P2.sistema.analisis
             else
             {
                 errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO WHILE NO ES DEL TIPO BOOL", 0, 0));
+            }
+            contextoActual = tmp;
+        }
+
+        private void ejecutarFuncionNativaRepeat(ParseTreeNode nodoRepeat)
+        {
+            Contexto tmp = contextoActual;
+            Object valor = calcularValor(nodoRepeat.ChildNodes.ElementAt(0));
+            if (valor.GetType().ToString().Equals("System.Int32"))
+            {
+                for (int i = 0 ; i < (int)valor; i++)
+                {
+                    contextoActual = new Contexto(tmp.identificadorClase + ",@while");
+                    contextoActual.anterior = tmp;
+                    if (ejecutarSentenciasBucle(nodoRepeat.ChildNodes.ElementAt(1)))
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                errores.Add(new Error("ERROR SEMANTICO", "CONDICION CICLO REPEAT NO ES DEL TIPO INT", 0, 0));
             }
             contextoActual = tmp;
         }
@@ -2464,6 +2489,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
                         break;
+                    case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
+                        break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
                     case "FUNCION_NATIVA_IF": ejecutarFuncionNativaIf(sentencia);
@@ -2566,6 +2593,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
                         break;
                     case "FUNCION_NATIVA_FOR": ejecutarFuncionNativaFor(sentencia);
                         break;
@@ -2675,6 +2704,8 @@ namespace OLC1_Interpreter_P2.sistema.analisis
                     case "FUNCION_NATIVA_PRINT": ejecutarFuncionNativaPrint(sentencia);
                         break;
                     case "FUNCION_NATIVA_SHOW": ejecutarFuncionNativaShow(sentencia);
+                        break;
+                    case "FUNCION_NATIVA_REPEAT": ejecutarFuncionNativaRepeat(sentencia);
                         break;
                     case "FUNCION_NATIVA_WHILE": ejecutarFuncionNativaWhile(sentencia);//podria retornar valor
                         break;
